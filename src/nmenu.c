@@ -163,6 +163,7 @@ static void create_window (NmenuPlugin *m)
     gtk_widget_show_all (m->swin);
     gtk_window_present (GTK_WINDOW (m->swin));
     gtk_widget_get_allocation (m->stv, &alloc);
+    gtk_widget_set_size_request (m->stv, alloc.width, alloc.height);
 }
 
 static void destroy_window (NmenuPlugin *m)
@@ -237,8 +238,13 @@ static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpoin
     if ((event->keyval >= 'a' && event->keyval <= 'z') ||
         (event->keyval >= 'A' && event->keyval <= 'Z'))
     {
-        gtk_entry_set_text (GTK_ENTRY (m->srch), "");
         append_to_entry (m->srch, event->keyval);
+        return TRUE;
+    }
+
+    if (event->keyval == GDK_KEY_BackSpace)
+    {
+        append_to_entry (m->srch, 0);
         return TRUE;
     }
 
@@ -307,8 +313,11 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
                                 return TRUE;
 
         case GDK_KEY_Up :
-        case GDK_KEY_Down :     gtk_widget_grab_focus (m->stv);
-                                return TRUE;
+        case GDK_KEY_Down :
+        case GDK_KEY_Left :
+        case GDK_KEY_Right :    gtk_widget_grab_focus (m->stv);
+                                // propagate the key press event to the icon view...
+                                return FALSE;
 
         default :               return FALSE;
     }

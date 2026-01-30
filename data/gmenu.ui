@@ -5,30 +5,24 @@
   <object class="GtkWindow" id="gmenu">
     <property name="name">iconmenu</property>
     <property name="can-focus">False</property>
-    <property name="default-width">440</property>
-    <property name="default-height">250</property>
     <property name="decorated">False</property>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
+        <property name="halign">center</property>
+        <property name="valign">center</property>
         <property name="border-width">20</property>
         <property name="orientation">vertical</property>
-        <property name="spacing">10</property>
+        <property name="spacing">20</property>
         <child>
-          <object class="GtkScrolledWindow">
+          <object class="GtkIconView" id="iconview">
+            <property name="name">iconmenuview</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
-            <child>
-              <object class="GtkIconView" id="iconview">
-                <property name="name">iconmenuview</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="halign">center</property>
-                <property name="valign">center</property>
-                <property name="margin">6</property>
-              </object>
-            </child>
+            <property name="margin">0</property>
+            <property name="reorderable">True</property>
+            <property name="activate-on-single-click">True</property>
           </object>
           <packing>
             <property name="expand">True</property>
