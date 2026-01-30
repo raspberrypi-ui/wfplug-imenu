@@ -1,0 +1,87 @@
+# English translations for plugin package.
+# Copyright (C) 2025 Raspberry Pi
+# This file is distributed under the same license as the wf-panel-pi package.
+# Simon Long <simon@raspberrypi.com>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-23 10:36+0100\n"
+"PO-Revision-Date: 2025-05-23 10:36+0100\n"
+"Last-Translator: Simon Long <simon@raspberrypi.com>\n"
+"Language-Team: English (British)\n"
+"Language: en_GB\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#
+#: ../src/gtk-run.c:392 ../src/smenu.c:899
+msgid "Run"
+msgstr "Run..."
+
+msgctxt "dialog"
+msgid "Run"
+msgstr "Run Command"
+
+#: ../src/gtk-run.c:396
+msgid "_Cancel"
+msgstr "_Cancel"
+
+#: ../src/gtk-run.c:397
+msgid "_OK"
+msgstr "_OK"
+
+#: ../src/gtk-run.c:413
+msgid "Enter the command you want to execute:"
+msgstr "Enter the command to execute:"
+
+#: ../src/smenu.c:71
+msgid "Icon horizontal padding"
+msgstr "Icon Horizontal Padding"
+
+#: ../src/smenu.c:71
+msgid "Show tooltips for menu items"
+msgstr "Show Tooltips for Menu Items"
+
+#: ../src/smenu.c:72
+msgid "Fix height of search window"
+msgstr "Fix Size of Search Window"
+
+#: ../src/smenu.c:73
+msgid "Search window height"
+msgstr "Search Window Height"
+
+#: ../src/smenu.c:141
+msgid "No file manager is configured."
+msgstr ""
+
+#: ../src/smenu.c:474
+msgid "Add to desktop"
+msgstr "Add to Desktop"
+
+#: ../src/smenu.c:479
+msgid "Add to Launcher"
+msgstr "Add to Launcher"
+
+#: ../src/smenu.c:487
+msgid "Properties"
+msgstr "Properties"
+
+#: ../src/smenu.c:904
+msgid "Logout"
+msgstr "Shutdown..."
+
+#: ../src/smenu.c:976
+msgid "Click here to open applications menu"
+msgstr "Click here to open applications menu"
+
+#: ../src/smenu.c:1111
+msgid "Searchable Application Menu"
+msgstr "Searchable Application Menu"
+
+#: ../src/smenu.h:32
+msgid "Menu"
+msgstr "Menu"

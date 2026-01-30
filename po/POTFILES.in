@@ -1,0 +1,6 @@
+[encoding: UTF-8]
+src/gtk-run.c
+src/properties.c
+src/nmenu.h
+src/nmenu.cpp
+src/nmenu.hpp

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<wf-panel-pi>
+	<plugin name="panel">
+	<_short>Panel</_short>
+	<group>
+	<_short>Searchable Menu</_short>
+	<option name="nmenu_padding" type="int">
+		<_short>Icon Horizontal Padding</_short>
+		<default>6</default>
+	</option>
+	<option name="nmenu_show_tooltips" type="bool">
+		<_short>Searchable Menu Show Tooltips</_short>
+		<default>false</default>
+	</option>
+	</group>
+	</plugin>
+</wf-panel-pi>
