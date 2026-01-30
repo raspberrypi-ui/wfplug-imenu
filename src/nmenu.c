@@ -57,9 +57,9 @@ conf_table_t conf_table[3] = {
 /* Prototypes                                                                 */
 /*----------------------------------------------------------------------------*/
 
-static void create_search (NmenuPlugin *m);
-static void destroy_search (NmenuPlugin *m);
-static void search_destroyed (GtkWidget *, gpointer data);
+static void create_window (NmenuPlugin *m);
+static void destroy_window (NmenuPlugin *m);
+static void window_destroyed (GtkWidget *, gpointer data);
 static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
 static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, gpointer user_data);
 static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event, gpointer user_data);
@@ -82,9 +82,11 @@ static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 /* Function definitions                                                       */
 /*----------------------------------------------------------------------------*/
 
+
+GtkAllocation alloc;
 /* Icon window */
 
-static void create_search (NmenuPlugin *m)
+static void create_window (NmenuPlugin *m)
 {
     GtkCellRenderer *prend, *trend;
     GtkTreeModelSort *slist;
@@ -92,6 +94,7 @@ static void create_search (NmenuPlugin *m)
     GtkBuilder *builder;
     GtkCellLayout *layout;
     GtkGesture *gesture;
+    GdkRectangle monitor_geometry;
 
     textdomain (GETTEXT_PACKAGE);
     builder = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/gmenu.ui");
@@ -136,7 +139,7 @@ static void create_search (NmenuPlugin *m)
     g_signal_connect (m->stv, "item-activated", G_CALLBACK (handle_iconview_selected), m);
     g_signal_connect (m->stv, "button-press-event", G_CALLBACK (handle_iconview_buttonpress), m);
     g_signal_connect (m->stv, "key-press-event", G_CALLBACK (handle_iconview_keypress), m);
-    g_signal_connect (m->swin, "destroy", G_CALLBACK (search_destroyed), m);
+    g_signal_connect (m->swin, "destroy", G_CALLBACK (window_destroyed), m);
 
     gesture = gtk_gesture_long_press_new (m->stv);
     gtk_gesture_single_set_touch_only (GTK_GESTURE_SINGLE (gesture), FALSE);
@@ -146,17 +149,29 @@ static void create_search (NmenuPlugin *m)
     pressed = FALSE;
 
     /* realise */
+    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), 0), &monitor_geometry);
+    gtk_window_set_default_size (GTK_WINDOW (m->swin), monitor_geometry.width, monitor_geometry.height);
+    gtk_layer_init_for_window (GTK_WINDOW (m->swin));
+    gtk_layer_set_layer (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_LAYER_TOP);
+    gtk_layer_set_monitor (GTK_WINDOW (m->swin), gdk_display_get_monitor (gdk_display_get_default (), 0));
+    gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+    gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
+    gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+    gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+    gtk_layer_set_keyboard_interactivity (GTK_WINDOW (m->swin), TRUE);
+
     gtk_widget_show_all (m->swin);
     gtk_window_present (GTK_WINDOW (m->swin));
+    gtk_widget_get_allocation (m->stv, &alloc);
 }
 
-static void destroy_search (NmenuPlugin *m)
+static void destroy_window (NmenuPlugin *m)
 {
     if (m->swin) gtk_widget_destroy (m->swin);
     m->swin = NULL;
 }
 
-static void search_destroyed (GtkWidget *, gpointer data)
+static void window_destroyed (GtkWidget *, gpointer data)
 {
     NmenuPlugin *m = (NmenuPlugin *) data;
     g_signal_handlers_disconnect_matched (m->swin, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
@@ -190,7 +205,7 @@ static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, 
     gtk_tree_model_get (mod, &fitem, 2, &str, -1);
 
     gtk_launch (str);
-    destroy_search (m);
+    destroy_window (m);
 }
 
 static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event, gpointer user_data)
@@ -229,7 +244,7 @@ static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpoin
 
     switch (event->keyval)
     {
-        case GDK_KEY_Escape :   destroy_search (m);
+        case GDK_KEY_Escape :   destroy_window (m);
                                 return TRUE;
 
         default :               return FALSE;
@@ -284,11 +299,11 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
                                     gtk_tree_model_get_iter (mod, &iter, (GtkTreePath *) list->data); 
                                     gtk_tree_model_get (mod, &iter, 2, &str, -1);
                                     gtk_launch (str);
-                                    destroy_search (m);
+                                    destroy_window (m);
                                 }
                                 return TRUE;
 
-        case GDK_KEY_Escape :   destroy_search (m);
+        case GDK_KEY_Escape :   destroy_window (m);
                                 return TRUE;
 
         case GDK_KEY_Up :
@@ -307,6 +322,7 @@ static void handle_search_changed (GtkEditable *, gpointer user_data)
     gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv))));
     gtk_icon_view_select_path (GTK_ICON_VIEW (m->stv), path);
     gtk_tree_path_free (path);
+    gtk_widget_set_size_request (m->stv, alloc.width, alloc.height);
 }
 
 static void append_to_entry (GtkWidget *entry, char val)
@@ -462,7 +478,8 @@ static void create_system_menu_item (MenuCacheItem *item, NmenuPlugin *m)
 static void menu_button_clicked (GtkWidget *, NmenuPlugin *m)
 {
     CHECK_LONGPRESS
-    create_search (m);
+    if (m->swin && gtk_widget_is_visible (m->swin)) destroy_window (m);
+    else create_window (m);
 }
 
 /* Handler for system config changed message from panel */
@@ -471,7 +488,7 @@ void menu_update_display (NmenuPlugin *m)
     wrap_set_taskbar_icon (m, m->img, "start-here");
     if (m->img) gtk_widget_set_size_request (m->img, wrap_icon_size (m) + 2 * m->padding, -1);
 
-    destroy_search (m);
+    destroy_window (m);
 }
 
 /* Handler for control message */
@@ -479,8 +496,8 @@ gboolean menu_control_msg (NmenuPlugin *m, const char *cmd)
 {
     if (!strncmp (cmd, "menu", 4))
     {
-        if (m->swin && gtk_widget_is_visible (m->swin)) destroy_search (m);
-        else create_search (m);
+        if (m->swin && gtk_widget_is_visible (m->swin)) destroy_window (m);
+        else create_window (m);
         return TRUE;
     }
 
@@ -541,7 +558,7 @@ void menu_destructor (gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
 
-    destroy_search (m);
+    destroy_window (m);
 
     if (m->applist) gtk_list_store_clear (m->applist);
     if (m->menu_cache)
