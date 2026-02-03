@@ -385,11 +385,14 @@ static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data)
     fprintf (fp, "URL=/usr/share/applications/%s\n", menu_cache_item_get_file_basename (item));
     fclose (fp);
     g_free (path);
+    destroy_window (m);
 }
 
-static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer)
+static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer user_data)
 {
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
     add_to_launcher (gtk_widget_get_name (mi));
+    destroy_window (m);
 }
 
 static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
