@@ -442,16 +442,13 @@ static void sys_menu_load_submenu (NmenuPlugin* m, MenuCacheDir* dir, GtkWidget 
 
 static void create_system_menu_item (MenuCacheItem *item, NmenuPlugin *m)
 {
-    GtkWidget *img;
     GdkPixbuf *icon;
 
     if (menu_cache_item_get_type (item) == MENU_CACHE_TYPE_APP)
     {
-        img = gtk_image_new ();
-
         icon = NULL;
         const char *icon_name = menu_cache_item_get_icon (item);
-        int scale = gtk_widget_get_scale_factor (img);
+        int scale = gtk_widget_get_scale_factor (m->img);
         if (icon_name)
         {
             if (strstr (icon_name, "/"))
@@ -473,8 +470,6 @@ static void create_system_menu_item (MenuCacheItem *item, NmenuPlugin *m)
         if (!icon)
             icon = gtk_icon_theme_load_icon_for_scale (gtk_icon_theme_get_default (), "application-x-executable",
                 wrap_icon_size (m), scale, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
-
-        if (icon) set_image_from_pixbuf (img, icon);
 
         gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, icon, 1, menu_cache_item_get_name (item), 2, menu_cache_item_get_file_basename (item), 3, menu_cache_item_get_comment (item), -1);
 
