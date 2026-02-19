@@ -446,30 +446,8 @@ static void create_system_menu_item (MenuCacheItem *item, NmenuPlugin *m)
 
     if (menu_cache_item_get_type (item) == MENU_CACHE_TYPE_APP)
     {
-        icon = NULL;
         const char *icon_name = menu_cache_item_get_icon (item);
-        int scale = gtk_widget_get_scale_factor (m->img);
-        if (icon_name)
-        {
-            if (strstr (icon_name, "/"))
-                icon = gdk_pixbuf_new_from_file_at_size (icon_name, wrap_icon_size (m) * scale, wrap_icon_size (m) * scale, NULL);
-            else
-            {
-                icon = gtk_icon_theme_load_icon_for_scale (gtk_icon_theme_get_default (), icon_name,
-                    wrap_icon_size (m), scale, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
-
-                // fallback for packages using obsolete icon location
-                if (!icon)
-                {
-                    char *fname = g_strdup_printf ("/usr/share/pixmaps/%s", icon_name);
-                    icon = gdk_pixbuf_new_from_file_at_size (fname, wrap_icon_size (m) * scale, wrap_icon_size (m) * scale, NULL);
-                    g_free (fname);
-                }
-            }
-        }
-        if (!icon)
-            icon = gtk_icon_theme_load_icon_for_scale (gtk_icon_theme_get_default (), "application-x-executable",
-                wrap_icon_size (m), scale, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
+        icon = load_taskbar_pixbuf (m->plugin, icon_name);
 
         gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, icon, 1, menu_cache_item_get_name (item), 2, menu_cache_item_get_file_basename (item), 3, menu_cache_item_get_comment (item), -1);
 
