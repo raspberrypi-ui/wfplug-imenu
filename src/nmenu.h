@@ -45,6 +45,8 @@ typedef struct
     int padding;
     int rheight;
     gboolean tooltips;
+    int width;
+    int height;
 
     MenuCache* menu_cache;
     gpointer reload_notify;

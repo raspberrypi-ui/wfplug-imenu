@@ -83,7 +83,6 @@ static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 /* Function definitions                                                       */
 /*----------------------------------------------------------------------------*/
 
-GtkAllocation alloc;
 /* Icon window */
 
 static void create_window (NmenuPlugin *m)
@@ -95,6 +94,7 @@ static void create_window (NmenuPlugin *m)
     GtkCellLayout *layout;
     GtkGesture *gesture;
     GdkRectangle monitor_geometry;
+    GtkAllocation alloc;
 
     textdomain (GETTEXT_PACKAGE);
     builder = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/gmenu.ui");
@@ -166,7 +166,9 @@ static void create_window (NmenuPlugin *m)
     gtk_widget_show_all (m->swin);
     gtk_window_present (GTK_WINDOW (m->swin));
     gtk_widget_get_allocation (m->stv, &alloc);
-    gtk_widget_set_size_request (m->stv, alloc.width, alloc.height);
+    m->width = alloc.width;
+    m->height = alloc.height;
+    gtk_widget_set_size_request (m->stv, m->width, m->height);
 }
 
 static void destroy_window (NmenuPlugin *m)
@@ -341,7 +343,7 @@ static void handle_search_changed (GtkEditable *, gpointer user_data)
     gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv))));
     gtk_icon_view_select_path (GTK_ICON_VIEW (m->stv), path);
     gtk_tree_path_free (path);
-    gtk_widget_set_size_request (m->stv, alloc.width, alloc.height);
+    gtk_widget_set_size_request (m->stv, m->width, m->height);
 }
 
 static void append_to_entry (GtkWidget *entry, char val)
