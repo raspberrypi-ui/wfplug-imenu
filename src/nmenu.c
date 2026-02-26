@@ -61,6 +61,7 @@ static void create_window (NmenuPlugin *m);
 static void destroy_window (NmenuPlugin *m);
 static void window_destroyed (GtkWidget *, gpointer data);
 static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
+static gboolean handle_clickaway (GtkWidget *, GdkEventButton *, gpointer user_data);
 static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, gpointer user_data);
 static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event, gpointer user_data);
 static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpointer user_data);
@@ -81,7 +82,6 @@ static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 /*----------------------------------------------------------------------------*/
 /* Function definitions                                                       */
 /*----------------------------------------------------------------------------*/
-
 
 GtkAllocation alloc;
 /* Icon window */
@@ -160,6 +160,9 @@ static void create_window (NmenuPlugin *m)
     gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
     gtk_layer_set_keyboard_interactivity (GTK_WINDOW (m->swin), TRUE);
 
+    gtk_widget_set_events (m->swin, gtk_widget_get_events (m->swin) | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+    g_signal_connect (m->swin, "button-release-event", G_CALLBACK (handle_clickaway), m);
+
     gtk_widget_show_all (m->swin);
     gtk_window_present (GTK_WINDOW (m->swin));
     gtk_widget_get_allocation (m->stv, &alloc);
@@ -194,6 +197,13 @@ static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer us
     if (pstr) g_free (pstr);
     g_free (str);
     return res;
+}
+
+static gboolean handle_clickaway (GtkWidget *, GdkEventButton *, gpointer user_data)
+{
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
+    destroy_window (m);
+    return FALSE;
 }
 
 static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, gpointer user_data)
