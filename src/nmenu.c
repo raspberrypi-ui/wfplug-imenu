@@ -80,6 +80,8 @@ static void read_menu_cache (NmenuPlugin *m);
 static void free_entry (MenuEntry *ent);
 static int compare_entries (MenuEntry *a, MenuEntry *b);
 static void load_menu (NmenuPlugin* m, MenuCacheDir* dir);
+static void load_sortorder (NmenuPlugin* m);
+static void save_sortorder (NmenuPlugin* m);
 static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 
 /*----------------------------------------------------------------------------*/
@@ -172,6 +174,7 @@ static void create_window (NmenuPlugin *m)
 
 static void destroy_window (NmenuPlugin *m)
 {
+    save_sortorder (m);
     if (m->swin) gtk_widget_destroy (m->swin);
     m->swin = NULL;
 }
@@ -482,6 +485,30 @@ static void free_entry (MenuEntry *entry)
 
 static int compare_entries (MenuEntry *a, MenuEntry *b)
 {
+    GList *item;
+    int posa, posb;
+
+    posa = -1;
+    item = a->sortorder;
+    while (item)
+    {
+        posa++;
+        if (!g_strcmp0 (a->id, item->data)) break;
+        item = item->next;
+    }
+
+    posb = -1;
+    item = a->sortorder;
+    while (item)
+    {
+        posb++;
+        if (!g_strcmp0 (b->id, item->data)) break;
+        item = item->next;
+    }
+
+    if (posa > -1 && posb > -1) return posa - posb;
+    else if (posa == -1) return 1;
+    else if (posb == -1) return -1;
     return g_ascii_strcasecmp (a->name, b->name);
 }
 
@@ -510,6 +537,7 @@ static void load_menu (NmenuPlugin* m, MenuCacheDir* dir)
                                             entry->name = g_strdup (menu_cache_item_get_name (item));
                                             entry->comment = g_strdup (menu_cache_item_get_comment (item));
                                             entry->icon = load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item));
+                                            entry->sortorder = m->sortorder;
                                             m->apps = g_list_prepend (m->apps, entry);
                                             break;
 
@@ -519,6 +547,55 @@ static void load_menu (NmenuPlugin* m, MenuCacheDir* dir)
     }
 
     g_slist_free (children);
+}
+
+/* Sorting */
+
+static void load_sortorder (NmenuPlugin* m)
+{
+    FILE *fp;
+    char line[256];
+
+    m->sortorder = NULL;
+
+    fp = fopen ("/home/spl/sortorder", "rb");
+    if (fp)
+    {
+        while (fgets (line, 255, fp))
+        {
+            line[strlen(line) - 1] = 0;
+            m->sortorder = g_list_prepend (m->sortorder, g_strdup (line));
+        }
+        fclose (fp);
+    }
+
+    m->sortorder = g_list_reverse (m->sortorder);
+}
+
+static void save_sortorder (NmenuPlugin* m)
+{
+    FILE *fp;
+    GtkTreeIter iter;
+    gboolean valid;
+    const char *str;
+
+    g_list_free_full (m->sortorder, (GDestroyNotify) g_free);
+    m->sortorder = NULL;
+
+    fp = fopen ("/home/spl/sortorder", "wb");
+
+    valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (m->applist), &iter);
+    while (valid)
+    {
+        gtk_tree_model_get (GTK_TREE_MODEL (m->applist), &iter, 2, &str, -1);
+        fprintf (fp, "%s\n", str);
+        m->sortorder = g_list_prepend (m->sortorder, g_strdup (str));
+        valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (m->applist), &iter);
+    }
+
+    fclose (fp);
+
+    m->sortorder = g_list_reverse (m->sortorder);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -539,7 +616,7 @@ void menu_update_display (NmenuPlugin *m)
     wrap_set_taskbar_icon (m, m->img, "start-here");
     if (m->img) gtk_widget_set_size_request (m->img, wrap_icon_size (m) + 2 * m->padding, -1);
 
-    destroy_window (m);
+    if (m->swin && gtk_widget_is_visible (m->swin)) destroy_window (m);
 }
 
 /* Handler for control message */
@@ -593,6 +670,9 @@ void menu_init (NmenuPlugin *m)
     m->applist = gtk_list_store_new (4, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
     m->swin = NULL;
     m->menu = NULL;
+
+    /* Load the sort list */
+    load_sortorder (m);
 
     gboolean need_prefix = (g_getenv ("XDG_MENU_PREFIX") == NULL);
     m->menu_cache = menu_cache_lookup (need_prefix ? "lxde-applications.menu" : "applications.menu");

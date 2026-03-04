@@ -53,6 +53,7 @@ typedef struct
     gpointer reload_notify;
 
     GList *apps;
+    GList *sortorder;
 } NmenuPlugin;
 
 typedef struct
@@ -61,6 +62,7 @@ typedef struct
     char *name;
     char *comment;
     GdkPixbuf *icon;
+    GList *sortorder;
 } MenuEntry;
 
 extern conf_table_t conf_table[3];
