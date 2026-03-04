@@ -69,7 +69,8 @@ static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpoin
 static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer);
 static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer user_data);
 static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointer user_data);
-static void handle_search_changed (GtkEditable *, gpointer user_data);
+static void handle_search_changed (GtkWidget *, gpointer user_data);
+static gboolean handle_search_button (GtkWidget *, GdkEventButton *event, gpointer user_data);
 static void append_to_entry (GtkWidget *entry, char val);
 static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y);
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data);
@@ -90,7 +91,6 @@ static void create_window (NmenuPlugin *m)
 {
     GtkCellRenderer *prend, *trend;
     GtkTreeModelSort *slist;
-    GtkTreeModelFilter *flist;
     GtkBuilder *builder;
     GtkCellLayout *layout;
     GtkGesture *gesture;
@@ -107,17 +107,17 @@ static void create_window (NmenuPlugin *m)
 
     g_signal_connect (m->srch, "changed", G_CALLBACK (handle_search_changed), m);
     g_signal_connect (m->srch, "key-press-event", G_CALLBACK (handle_search_keypress), m);
+    g_signal_connect (m->srch, "button_release-event", G_CALLBACK (handle_search_button), m);
 
     /* create the filtered list for the tree view */
     slist = GTK_TREE_MODEL_SORT (gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (m->applist)));
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (slist), 1, GTK_SORT_ASCENDING);
-    flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (slist), NULL));
-    gtk_tree_model_filter_set_visible_func (flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
+    m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (slist), NULL));
+    gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
 
-    gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (flist));
+    gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
     gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), 3);
     g_object_unref (slist);
-    g_object_unref (flist);
 
     /* set up the icon view */
     layout = GTK_CELL_LAYOUT (m->stv);
@@ -346,15 +346,31 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
     }
 }
 
-static void handle_search_changed (GtkEditable *, gpointer user_data)
+static void handle_search_changed (GtkWidget *entry, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     GtkTreePath *path = gtk_tree_path_new_from_indices (0, -1);
-    
-    gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv))));
+
+    if (!strlen (gtk_entry_get_text (GTK_ENTRY (entry))))
+    {
+        gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
+        gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), TRUE);
+    }
+    else
+    {
+        gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->flist));
+        gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (m->flist));
+        gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), FALSE);
+    }
+
     gtk_icon_view_select_path (GTK_ICON_VIEW (m->stv), path);
     gtk_tree_path_free (path);
     gtk_widget_set_size_request (m->stv, m->width, m->height);
+}
+
+static gboolean handle_search_button (GtkWidget *, GdkEventButton *, gpointer)
+{
+    return TRUE;
 }
 
 static void append_to_entry (GtkWidget *entry, char val)

@@ -42,6 +42,7 @@ typedef struct
     GtkWidget *stv;                 /* Search window tree view */
     GtkWidget *scr;                 /* Search window scrolled window */
     GtkListStore *applist;
+    GtkTreeModelFilter *flist;
     int padding;
     int rheight;
     gboolean tooltips;
