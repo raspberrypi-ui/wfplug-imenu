@@ -66,8 +66,9 @@ static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, 
 static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event, gpointer user_data);
 static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *event, gpointer user_data);
 static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpointer user_data);
-static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer);
-static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer user_data);
+static void handle_gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer);
+static void handle_gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer user_data);
+static void handle_drag_and_drop_done (GtkTreeModel *, GtkTreePath *, gpointer user_data);
 static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointer user_data);
 static void handle_search_changed (GtkWidget *, gpointer user_data);
 static gboolean handle_search_button (GtkWidget *, GdkEventButton *event, gpointer user_data);
@@ -144,8 +145,8 @@ static void create_window (NmenuPlugin *m)
 
     gesture = gtk_gesture_long_press_new (m->stv);
     gtk_gesture_single_set_touch_only (GTK_GESTURE_SINGLE (gesture), FALSE);
-    g_signal_connect (gesture, "pressed", G_CALLBACK (gesture_pressed), m);
-    g_signal_connect (gesture, "end", G_CALLBACK (gesture_end), m);
+    g_signal_connect (gesture, "pressed", G_CALLBACK (handle_gesture_pressed), m);
+    g_signal_connect (gesture, "end", G_CALLBACK (handle_gesture_end), m);
     gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (gesture), GTK_PHASE_TARGET);
     pressed = FALSE;
 
@@ -174,7 +175,6 @@ static void create_window (NmenuPlugin *m)
 
 static void destroy_window (NmenuPlugin *m)
 {
-    save_sortorder (m);
     if (m->swin) gtk_widget_destroy (m->swin);
     m->swin = NULL;
 }
@@ -305,7 +305,7 @@ static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpoin
     }
 }
 
-static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer user_data)
+static void handle_gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), FALSE);
@@ -314,7 +314,7 @@ static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpoint
     press_y = y;
 }
 
-static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer user_data)
+static void handle_gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     GtkTreeIter fitem;
@@ -331,6 +331,12 @@ static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer use
             create_cs_menu (m, str, press_x, press_y);
         }
     }
+}
+
+static void handle_drag_and_drop_done (GtkTreeModel *, GtkTreePath *, gpointer user_data)
+{
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
+    save_sortorder (m);
 }
 
 /* Search bar handling */
@@ -488,6 +494,7 @@ static void read_menu_cache (NmenuPlugin *m)
     m->apps = g_list_sort (m->apps, (GCompareFunc) compare_entries);
 
     // load the list store from the sorted list
+    g_signal_handlers_block_by_func (m->applist, G_CALLBACK (handle_drag_and_drop_done), m);
     if (m->applist) gtk_list_store_clear (m->applist);
     l = m->apps;
     while (l)
@@ -496,6 +503,7 @@ static void read_menu_cache (NmenuPlugin *m)
         gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, entry->icon, 1, entry->name, 2, entry->id, 3, entry->comment, -1);
         l = l->next;
     }
+    g_signal_handlers_unblock_by_func (m->applist, G_CALLBACK (handle_drag_and_drop_done), m);
 }
 
 static void free_entry (MenuEntry *entry)
@@ -692,6 +700,7 @@ void menu_init (NmenuPlugin *m)
 
     /* Set up variables */
     m->applist = gtk_list_store_new (4, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+    g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);
     m->swin = NULL;
     m->menu = NULL;
 
