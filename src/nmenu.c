@@ -248,7 +248,8 @@ static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event,
 static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
-    gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), TRUE);
+    if (gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv)) == GTK_TREE_MODEL (m->applist))
+        gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), TRUE);
     return FALSE;
 }
 
