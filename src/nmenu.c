@@ -538,10 +538,10 @@ static int compare_entries (MenuEntry *a, MenuEntry *b)
         item = item->next;
     }
 
-    if (posa > -1 && posb > -1) return posa - posb;
+    if (posa == -1 && posb == -1) return g_ascii_strcasecmp (a->name, b->name);
     else if (posa == -1) return 1;
     else if (posb == -1) return -1;
-    return g_ascii_strcasecmp (a->name, b->name);
+    else return posa - posb;
 }
 
 static void load_menu (NmenuPlugin* m, MenuCacheDir* dir)
@@ -587,10 +587,14 @@ static void load_sortorder (NmenuPlugin* m)
 {
     FILE *fp;
     char line[256];
+    char *str;
 
     m->sortorder = NULL;
 
-    fp = fopen ("/home/spl/sortorder", "rb");
+    str = g_build_filename (g_get_user_config_dir (), "wf-panel-pi", "icon_order", NULL);
+    fp = fopen (str, "rb");
+    g_free (str);
+
     if (fp)
     {
         while (fgets (line, 255, fp))
@@ -599,9 +603,8 @@ static void load_sortorder (NmenuPlugin* m)
             m->sortorder = g_list_prepend (m->sortorder, g_strdup (line));
         }
         fclose (fp);
+        m->sortorder = g_list_reverse (m->sortorder);
     }
-
-    m->sortorder = g_list_reverse (m->sortorder);
 }
 
 static void save_sortorder (NmenuPlugin* m)
@@ -609,12 +612,14 @@ static void save_sortorder (NmenuPlugin* m)
     FILE *fp;
     GtkTreeIter iter;
     gboolean valid;
-    const char *str;
+    char *str;
 
     g_list_free_full (m->sortorder, (GDestroyNotify) g_free);
     m->sortorder = NULL;
 
-    fp = fopen ("/home/spl/sortorder", "wb");
+    str = g_build_filename (g_get_user_config_dir (), "wf-panel-pi", "icon_order", NULL);
+    fp = fopen (str, "wb");
+    g_free (str);
 
     valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (m->applist), &iter);
     while (valid)
