@@ -49,9 +49,19 @@ typedef struct
     int width;
     int height;
 
-    MenuCache* menu_cache;
+    MenuCache *menu_cache;
     gpointer reload_notify;
+
+    GList *apps;
 } NmenuPlugin;
+
+typedef struct
+{
+    char *id;
+    char *name;
+    char *comment;
+    GdkPixbuf *icon;
+} MenuEntry;
 
 extern conf_table_t conf_table[3];
 

@@ -76,9 +76,10 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y);
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data);
 static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer);
 static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data);
-static void insert_system_menu (NmenuPlugin *m, GtkMenu *menu, int position);
-static void sys_menu_load_submenu (NmenuPlugin* m, MenuCacheDir* dir, GtkWidget* menu, int pos);
-static void create_system_menu_item (MenuCacheItem *item, NmenuPlugin *m);
+static void read_menu_cache (NmenuPlugin *m);
+static void free_entry (MenuEntry *ent);
+static int compare_entries (MenuEntry *a, MenuEntry *b);
+static void load_menu (NmenuPlugin* m, MenuCacheDir* dir);
 static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 
 /*----------------------------------------------------------------------------*/
@@ -102,8 +103,7 @@ static void create_window (NmenuPlugin *m)
     m->stv = (GtkWidget *) gtk_builder_get_object (builder, "iconview");
     m->srch = (GtkWidget *) gtk_builder_get_object (builder, "searchbar");
     
-    insert_system_menu (m, GTK_MENU (m->menu), -1);
-    // manipulate order of m->applist here...
+    read_menu_cache (m);
 
     g_signal_connect (m->srch, "changed", G_CALLBACK (handle_search_changed), m);
     g_signal_connect (m->srch, "key-press-event", G_CALLBACK (handle_search_keypress), m);
@@ -444,20 +444,52 @@ static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
 
 /* Load menu from cache */
 
-static void insert_system_menu (NmenuPlugin *m, GtkMenu *menu, int position)
+static void read_menu_cache (NmenuPlugin *m)
 {
     MenuCacheDir *dir = NULL;
+    MenuEntry *entry;
+    GList *l;
 
-    if (m->applist) gtk_list_store_clear (m->applist);
+    if (m->apps) g_list_free_full (m->apps, (GDestroyNotify) free_entry);
+    m->apps = NULL;
+
     while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
-
-    sys_menu_load_submenu (m, dir, GTK_WIDGET (menu), position);
+    load_menu (m, dir);
     menu_cache_item_unref (MENU_CACHE_ITEM (dir));
+
+    // need to do more clever things here to handle DnD
+    m->apps = g_list_sort (m->apps, (GCompareFunc) compare_entries);
+
+    // load the list store from the sorted list
+    if (m->applist) gtk_list_store_clear (m->applist);
+    l = m->apps;
+    while (l)
+    {
+        entry = (MenuEntry *) l->data;
+        gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, entry->icon, 1, entry->name, 2, entry->id, 3, entry->comment, -1);
+        l = l->next;
+    }
 }
 
-static void sys_menu_load_submenu (NmenuPlugin* m, MenuCacheDir* dir, GtkWidget *, int)
+static void free_entry (MenuEntry *entry)
+{
+    g_free (entry->id);
+    g_free (entry->name);
+    g_free (entry->comment);
+    g_object_unref (entry->icon);
+    g_free (entry);
+}
+
+static int compare_entries (MenuEntry *a, MenuEntry *b)
+{
+    return g_ascii_strcasecmp (a->name, b->name);
+}
+
+static void load_menu (NmenuPlugin* m, MenuCacheDir* dir)
 {
     GSList *l, *children;
+    MenuCacheItem *item;
+    MenuEntry *entry;
 
     if (!menu_cache_dir_is_visible (dir)) return;
 
@@ -465,34 +497,28 @@ static void sys_menu_load_submenu (NmenuPlugin* m, MenuCacheDir* dir, GtkWidget 
 
     for (l = children; l; l = l->next)
     {
-        MenuCacheItem* item = MENU_CACHE_ITEM (l->data);
+        item = MENU_CACHE_ITEM (l->data);
         if ((menu_cache_item_get_type (item) != MENU_CACHE_TYPE_APP) || (menu_cache_app_get_is_visible (MENU_CACHE_APP (item), SHOW_IN_LXDE)))
         {
-            /* process subentries */
-            if (menu_cache_item_get_type (item) == MENU_CACHE_TYPE_DIR)
+            switch (menu_cache_item_get_type (item))
             {
-                sys_menu_load_submenu (m, MENU_CACHE_DIR (item), NULL, -1);
+                case MENU_CACHE_TYPE_DIR :  load_menu (m, MENU_CACHE_DIR (item));
+                                            break;
+
+                case MENU_CACHE_TYPE_APP :  entry = g_new0 (MenuEntry, 1);
+                                            entry->id = g_strdup (menu_cache_item_get_id (item));
+                                            entry->name = g_strdup (menu_cache_item_get_name (item));
+                                            entry->comment = g_strdup (menu_cache_item_get_comment (item));
+                                            entry->icon = load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item));
+                                            m->apps = g_list_prepend (m->apps, entry);
+                                            break;
+
+                default:                    break;
             }
-            else create_system_menu_item (item, m);
         }
     }
 
     g_slist_free (children);
-}
-
-static void create_system_menu_item (MenuCacheItem *item, NmenuPlugin *m)
-{
-    GdkPixbuf *icon;
-
-    if (menu_cache_item_get_type (item) == MENU_CACHE_TYPE_APP)
-    {
-        const char *icon_name = menu_cache_item_get_icon (item);
-        icon = load_taskbar_pixbuf (m->plugin, icon_name);
-
-        gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, icon, 1, menu_cache_item_get_name (item), 2, menu_cache_item_get_file_basename (item), 3, menu_cache_item_get_comment (item), -1);
-
-        if (icon) g_object_unref (icon);
-    }
 }
 
 /*----------------------------------------------------------------------------*/
