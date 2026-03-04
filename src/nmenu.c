@@ -90,7 +90,6 @@ static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 static void create_window (NmenuPlugin *m)
 {
     GtkCellRenderer *prend, *trend;
-    GtkTreeModelSort *slist;
     GtkBuilder *builder;
     GtkCellLayout *layout;
     GtkGesture *gesture;
@@ -104,20 +103,18 @@ static void create_window (NmenuPlugin *m)
     m->srch = (GtkWidget *) gtk_builder_get_object (builder, "searchbar");
     
     insert_system_menu (m, GTK_MENU (m->menu), -1);
+    // manipulate order of m->applist here...
 
     g_signal_connect (m->srch, "changed", G_CALLBACK (handle_search_changed), m);
     g_signal_connect (m->srch, "key-press-event", G_CALLBACK (handle_search_keypress), m);
     g_signal_connect (m->srch, "button_release-event", G_CALLBACK (handle_search_button), m);
 
     /* create the filtered list for the tree view */
-    slist = GTK_TREE_MODEL_SORT (gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (m->applist)));
-    gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (slist), 1, GTK_SORT_ASCENDING);
-    m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (slist), NULL));
+    m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
     gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
 
     gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
     gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), 3);
-    g_object_unref (slist);
 
     /* set up the icon view */
     layout = GTK_CELL_LAYOUT (m->stv);
@@ -197,7 +194,7 @@ static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer us
 
     gtk_tree_model_get (model, iter, 1, &str, -1);
     if (gtk_tree_model_iter_previous (model, &prev)) gtk_tree_model_get (model, &prev, 1, &pstr, -1);
-    if ((!pstr || strcmp (str, pstr)) && strcasestr (str, gtk_entry_get_text (GTK_ENTRY (m->srch)))) res = TRUE;
+    if ((!pstr || g_strcmp0 (str, pstr)) && strcasestr (str, gtk_entry_get_text (GTK_ENTRY (m->srch)))) res = TRUE;
     if (pstr) g_free (pstr);
     g_free (str);
     return res;
