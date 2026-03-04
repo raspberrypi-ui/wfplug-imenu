@@ -71,7 +71,7 @@ static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer use
 static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointer user_data);
 static void handle_search_changed (GtkEditable *, gpointer user_data);
 static void append_to_entry (GtkWidget *entry, char val);
-static void create_cs_menu (NmenuPlugin *m, char *id);
+static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y);
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data);
 static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer);
 static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data);
@@ -238,7 +238,7 @@ static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event,
             ivm = gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv));
             gtk_tree_model_get_iter (ivm, &fitem, path);
             gtk_tree_model_get (ivm, &fitem, 2, &str, -1);
-            create_cs_menu (m, str);
+            create_cs_menu (m, str, event->x, event->y);
         }
         return TRUE;
     }
@@ -301,7 +301,7 @@ static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer use
             ivm = gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv));
             gtk_tree_model_get_iter (ivm, &fitem, path);
             gtk_tree_model_get (ivm, &fitem, 2, &str, -1);
-            create_cs_menu (m, str);
+            create_cs_menu (m, str, press_x, press_y);
         }
 
         pressed = FALSE;
@@ -368,9 +368,10 @@ static void append_to_entry (GtkWidget *entry, char val)
 
 /* Popup menu */
 
-static void create_cs_menu (NmenuPlugin *m, char *id)
+static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y)
 {
     GtkWidget *item, *menu;
+    GdkRectangle rect = {x, y, 0, 0};
 
     menu = gtk_menu_new ();
 
@@ -393,7 +394,8 @@ static void create_cs_menu (NmenuPlugin *m, char *id)
     gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 
     gtk_widget_show_all (menu);
-    gtk_menu_popup_at_pointer (GTK_MENU (menu), NULL);
+    gtk_menu_popup_at_rect (GTK_MENU (menu), gtk_widget_get_window (m->stv), &rect,
+        GDK_GRAVITY_CENTER, GDK_GRAVITY_NORTH_WEST, NULL);
 }
 
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data)
@@ -422,6 +424,7 @@ static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     MenuCacheItem *item = menu_cache_find_item_by_id (m->menu_cache, gtk_widget_get_name (mi));
+    destroy_window (m);
     show_properties_dialog (item);
 }
 

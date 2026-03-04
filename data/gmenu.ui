@@ -22,7 +22,7 @@
             <property name="can-focus">True</property>
             <property name="margin">0</property>
             <property name="reorderable">True</property>
-            <property name="activate-on-single-click">True</property>
+            <property name="activate-on-single-click">False</property>
           </object>
           <packing>
             <property name="expand">True</property>
