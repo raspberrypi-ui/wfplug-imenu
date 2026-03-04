@@ -64,6 +64,7 @@ static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer us
 static gboolean handle_clickaway (GtkWidget *, GdkEventButton *, gpointer user_data);
 static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, gpointer user_data);
 static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event, gpointer user_data);
+static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *event, gpointer user_data);
 static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpointer user_data);
 static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer);
 static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer user_data);
@@ -138,6 +139,7 @@ static void create_window (NmenuPlugin *m)
 
     g_signal_connect (m->stv, "item-activated", G_CALLBACK (handle_iconview_selected), m);
     g_signal_connect (m->stv, "button-press-event", G_CALLBACK (handle_iconview_buttonpress), m);
+    g_signal_connect (m->stv, "button-release-event", G_CALLBACK (handle_iconview_buttonrel), m);
     g_signal_connect (m->stv, "key-press-event", G_CALLBACK (handle_iconview_keypress), m);
     g_signal_connect (m->swin, "destroy", G_CALLBACK (window_destroyed), m);
 
@@ -243,6 +245,13 @@ static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event,
     return FALSE;
 }
 
+static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *, gpointer user_data)
+{
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
+    gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), TRUE);
+    return FALSE;
+}
+
 static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
@@ -269,8 +278,10 @@ static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpoin
     }
 }
 
-static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer)
+static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer user_data)
 {
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
+    gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), FALSE);
     pressed = TRUE;
     press_x = x;
     press_y = y;
