@@ -228,11 +228,12 @@ static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event,
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     GtkTreeIter fitem;
     GtkTreeModel *ivm;
+    GtkTreePath *path;
     char *str;
 
     if (event->button == 3)
     {
-        GtkTreePath *path = gtk_icon_view_get_path_at_pos (GTK_ICON_VIEW (m->stv), event->x, event->y);
+        path = gtk_icon_view_get_path_at_pos (GTK_ICON_VIEW (m->stv), event->x, event->y);
         if (path)
         {
             ivm = gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv));
@@ -245,11 +246,36 @@ static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event,
     return FALSE;
 }
 
-static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *, gpointer user_data)
+static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *event, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
+    GtkTreeIter fitem;
+    GtkTreeModel *ivm;
+    GtkTreePath *path;
+    char *str;
+
     if (gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv)) == GTK_TREE_MODEL (m->applist))
         gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), TRUE);
+
+    if (pressed)
+    {
+        pressed = FALSE;
+        return FALSE;
+    }
+
+    if (event->button == 1)
+    {
+        path = gtk_icon_view_get_path_at_pos (GTK_ICON_VIEW (m->stv), event->x, event->y);
+        if (path)
+        {
+            ivm = gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv));
+            gtk_tree_model_get_iter (ivm, &fitem, path);
+            gtk_tree_model_get (ivm, &fitem, 2, &str, -1);
+            gtk_launch (str);
+            destroy_window (m);
+        }
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -304,8 +330,6 @@ static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer use
             gtk_tree_model_get (ivm, &fitem, 2, &str, -1);
             create_cs_menu (m, str, press_x, press_y);
         }
-
-        pressed = FALSE;
     }
 }
 
