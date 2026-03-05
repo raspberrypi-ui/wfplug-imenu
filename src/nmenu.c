@@ -100,14 +100,14 @@ static void create_window (NmenuPlugin *m)
     GtkCellLayout *layout;
     GtkGesture *gesture;
     GdkRectangle monitor_geometry;
-    GtkAllocation alloc;
 
     textdomain (GETTEXT_PACKAGE);
     builder = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/gmenu.ui");
     m->swin = (GtkWidget *) gtk_builder_get_object (builder, "gmenu");
     m->stv = (GtkWidget *) gtk_builder_get_object (builder, "iconview");
     m->srch = (GtkWidget *) gtk_builder_get_object (builder, "searchbar");
-    
+    m->scrw = (GtkWidget *) gtk_builder_get_object (builder, "scrollwin");
+
     read_menu_cache (m);
 
     g_signal_connect (m->srch, "changed", G_CALLBACK (handle_search_changed), m);
@@ -167,12 +167,13 @@ static void create_window (NmenuPlugin *m)
     gtk_widget_set_events (m->swin, gtk_widget_get_events (m->swin) | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
     g_signal_connect (m->swin, "button-release-event", G_CALLBACK (handle_clickaway), m);
 
+    gtk_scrolled_window_set_max_content_width (GTK_SCROLLED_WINDOW (m->scrw), 500);
+    gtk_scrolled_window_set_min_content_width (GTK_SCROLLED_WINDOW (m->scrw), 500);
+    gtk_scrolled_window_set_max_content_height (GTK_SCROLLED_WINDOW (m->scrw), 400);
+    gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (m->scrw), 400);
+
     gtk_widget_show_all (m->swin);
     gtk_window_present (GTK_WINDOW (m->swin));
-    gtk_widget_get_allocation (m->stv, &alloc);
-    m->width = alloc.width;
-    m->height = alloc.height;
-    gtk_widget_set_size_request (m->stv, m->width, m->height);
 }
 
 static void destroy_window (NmenuPlugin *m)
@@ -400,7 +401,6 @@ static void handle_search_changed (GtkWidget *entry, gpointer user_data)
 
     gtk_icon_view_select_path (GTK_ICON_VIEW (m->stv), path);
     gtk_tree_path_free (path);
-    gtk_widget_set_size_request (m->stv, m->width, m->height);
 }
 
 static gboolean handle_search_button (GtkWidget *, GdkEventButton *, gpointer)
