@@ -48,10 +48,10 @@ extern void show_properties_dialog (MenuCacheItem *item);
 /*----------------------------------------------------------------------------*/
 
 conf_table_t conf_table[4] = {
-    {CONF_TYPE_INT,  "padding",          N_("Icon horizontal padding"),         NULL},
-    {CONF_TYPE_BOOL, "show_tooltips",    N_("Show tooltips for menu items"),    NULL},
-    {CONF_TYPE_BOOL, "alpha_sort",       N_("Sort items alphabetically"),       NULL},
-    {CONF_TYPE_NONE, NULL,               NULL,                                  NULL}
+    {CONF_TYPE_INT,  "padding",          N_("Icon horizontal padding"),     NULL},
+    {CONF_TYPE_BOOL, "show_tooltips",    N_("Show tooltips"),               NULL},
+    {CONF_TYPE_BOOL, "alpha_sort",       N_("Sort items alphabetically"),   NULL},
+    {CONF_TYPE_NONE, NULL,               NULL,                              NULL}
 };
 
 /*----------------------------------------------------------------------------*/
@@ -119,7 +119,7 @@ static void create_window (NmenuPlugin *m)
     gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
 
     gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
-    gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), 3);
+    if (m->tooltips) gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), 3);
 
     /* set up the icon view */
     layout = GTK_CELL_LAYOUT (m->stv);
