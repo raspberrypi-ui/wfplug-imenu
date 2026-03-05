@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-23 10:36+0100\n"
+"POT-Creation-Date: 2026-03-05 10:52+0000\n"
 "PO-Revision-Date: 2025-05-23 10:36+0100\n"
 "Last-Translator: Simon Long <simon@raspberrypi.com>\n"
 "Language-Team: English (British)\n"
@@ -17,71 +17,74 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#
-#: ../src/gtk-run.c:392 ../src/smenu.c:899
-msgid "Run"
-msgstr "Run..."
-
-msgctxt "dialog"
-msgid "Run"
-msgstr "Run Command"
-
-#: ../src/gtk-run.c:396
-msgid "_Cancel"
-msgstr "_Cancel"
-
-#: ../src/gtk-run.c:397
-msgid "_OK"
-msgstr "_OK"
-
-#: ../src/gtk-run.c:413
-msgid "Enter the command you want to execute:"
-msgstr "Enter the command to execute:"
-
-#: ../src/smenu.c:71
+#: ../src/nmenu.c:51
 msgid "Icon horizontal padding"
 msgstr "Icon Horizontal Padding"
 
-#: ../src/smenu.c:71
-msgid "Show tooltips for menu items"
-msgstr "Show Tooltips for Menu Items"
+#: ../src/nmenu.c:52
+msgid "Show tooltips"
+msgstr "Show Tooltips"
 
-#: ../src/smenu.c:72
-msgid "Fix height of search window"
-msgstr "Fix Size of Search Window"
+#: ../src/nmenu.c:53
+msgid "Sort items alphabetically"
+msgstr "Sort Items Alphabetically"
 
-#: ../src/smenu.c:73
-msgid "Search window height"
-msgstr "Search Window Height"
-
-#: ../src/smenu.c:141
-msgid "No file manager is configured."
-msgstr ""
-
-#: ../src/smenu.c:474
+#: ../src/nmenu.c:429
 msgid "Add to desktop"
 msgstr "Add to Desktop"
 
-#: ../src/smenu.c:479
+#: ../src/nmenu.c:434
 msgid "Add to Launcher"
 msgstr "Add to Launcher"
 
-#: ../src/smenu.c:487
+#: ../src/nmenu.c:442
 msgid "Properties"
 msgstr "Properties"
 
-#: ../src/smenu.c:904
-msgid "Logout"
-msgstr "Shutdown..."
-
-#: ../src/smenu.c:976
+#: ../src/nmenu.c:740 ../src/nmenu.cpp:53
 msgid "Click here to open applications menu"
 msgstr "Click here to open applications menu"
 
-#: ../src/smenu.c:1111
-msgid "Searchable Application Menu"
-msgstr "Searchable Application Menu"
+#: ../src/nmenu.h:32
+msgid "Icon Menu"
+msgstr "Icon Menu"
 
-#: ../src/smenu.h:32
-msgid "Menu"
-msgstr "Menu"
+#: ../data/properties.ui.h:1
+msgid "Menu Item Properties"
+msgstr "Icon Menu Properties"
+
+#: ../data/properties.ui.h:2
+msgid "Name:"
+msgstr ""
+
+#: ../data/properties.ui.h:3
+msgid "label"
+msgstr ""
+
+#: ../data/properties.ui.h:4
+msgid "Location:"
+msgstr ""
+
+#: ../data/properties.ui.h:5
+msgid "ID:"
+msgstr ""
+
+#: ../data/properties.ui.h:6
+msgid "File:"
+msgstr ""
+
+#: ../data/properties.ui.h:7
+msgid "Command:"
+msgstr ""
+
+#: ../data/properties.ui.h:8
+msgid "Comment:"
+msgstr ""
+
+#: ../data/properties.ui.h:9
+msgid "_Edit..."
+msgstr ""
+
+#: ../data/properties.ui.h:10
+msgid "_Close"
+msgstr ""

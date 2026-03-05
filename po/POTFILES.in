@@ -1,6 +1,9 @@
 [encoding: UTF-8]
-src/gtk-run.c
-src/properties.c
+src/nmenu.c
 src/nmenu.h
 src/nmenu.cpp
 src/nmenu.hpp
+src/gtk-launch.c
+src/properties.c
+[type: gettext/glade] data/gmenu.ui
+[type: gettext/glade] data/properties.ui
