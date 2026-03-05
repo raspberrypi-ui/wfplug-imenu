@@ -36,7 +36,6 @@ typedef struct
     GtkWidget *plugin;
     GtkGesture *migesture;
     GtkWidget *img;                 /* Taskbar icon */
-    GtkWidget *menu;                /* Menu */
     GtkWidget *swin;                /* Search window popup */
     GtkWidget *srch;                /* Search window search bar */
     GtkWidget *stv;                 /* Search window tree view */
@@ -46,6 +45,7 @@ typedef struct
     int padding;
     int rheight;
     gboolean tooltips;
+    gboolean alphasort;
     int width;
     int height;
 
@@ -65,7 +65,7 @@ typedef struct
     GList *sortorder;
 } MenuEntry;
 
-extern conf_table_t conf_table[3];
+extern conf_table_t conf_table[4];
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -74,6 +74,7 @@ extern conf_table_t conf_table[3];
 extern void menu_init (NmenuPlugin *m);
 extern void menu_update_display (NmenuPlugin *m);
 extern void menu_set_padding (NmenuPlugin *m);
+extern void clear_sortorder (NmenuPlugin *m);
 extern gboolean menu_control_msg (NmenuPlugin *m, const char *cmd);
 extern void menu_destructor (gpointer user_data);
 

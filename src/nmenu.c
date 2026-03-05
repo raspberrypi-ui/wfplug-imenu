@@ -47,10 +47,11 @@ extern void show_properties_dialog (MenuCacheItem *item);
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
 
-conf_table_t conf_table[3] = {
-    {CONF_TYPE_INT,  "padding",          N_("Icon horizontal padding"),     NULL},
-    {CONF_TYPE_BOOL, "show_tooltips",    N_("Show tooltips for menu items"), NULL},
-    {CONF_TYPE_NONE, NULL,               NULL,                              NULL}
+conf_table_t conf_table[4] = {
+    {CONF_TYPE_INT,  "padding",          N_("Icon horizontal padding"),         NULL},
+    {CONF_TYPE_BOOL, "show_tooltips",    N_("Show tooltips for menu items"),    NULL},
+    {CONF_TYPE_BOOL, "alpha_sort",       N_("Sort items alphabetically"),       NULL},
+    {CONF_TYPE_NONE, NULL,               NULL,                                  NULL}
 };
 
 /*----------------------------------------------------------------------------*/
@@ -83,6 +84,7 @@ static int compare_entries (MenuEntry *a, MenuEntry *b);
 static void load_menu (NmenuPlugin* m, MenuCacheDir* dir);
 static void load_sortorder (NmenuPlugin* m);
 static void save_sortorder (NmenuPlugin* m);
+static void set_alphasort (gboolean state);
 static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 
 /*----------------------------------------------------------------------------*/
@@ -604,7 +606,10 @@ static void load_sortorder (NmenuPlugin* m)
         }
         fclose (fp);
         m->sortorder = g_list_reverse (m->sortorder);
+        m->alphasort = FALSE;
     }
+    else m->alphasort = TRUE;
+    set_alphasort (m->alphasort);
 }
 
 static void save_sortorder (NmenuPlugin* m)
@@ -633,6 +638,39 @@ static void save_sortorder (NmenuPlugin* m)
     fclose (fp);
 
     m->sortorder = g_list_reverse (m->sortorder);
+    m->alphasort = FALSE;
+    set_alphasort (m->alphasort);
+}
+
+void clear_sortorder (NmenuPlugin *m)
+{
+    char *str;
+
+    str = g_build_filename (g_get_user_config_dir (), "wf-panel-pi", "icon_order", NULL);
+    unlink (str);
+    g_free (str);
+
+    g_list_free_full (m->sortorder, (GDestroyNotify) g_free);
+    m->sortorder = NULL;
+
+    m->alphasort = TRUE;
+}
+
+static void set_alphasort (gboolean state)
+{
+    char *filename, *str;
+    GKeyFile *kf;
+    gsize len;
+
+    filename = g_build_filename (g_get_user_config_dir (), "wf-panel-pi", "wf-panel-pi.ini", NULL);
+    kf = g_key_file_new ();
+    g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL);
+    g_key_file_set_boolean (kf, "panel", "nmenu_alpha_sort", state);
+    str = g_key_file_to_data (kf, &len, NULL);
+    g_file_set_contents (filename, str, len, NULL);
+    g_free (str);
+    g_key_file_free (kf);
+    g_free (filename);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -707,7 +745,6 @@ void menu_init (NmenuPlugin *m)
     m->applist = gtk_list_store_new (4, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
     g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);
     m->swin = NULL;
-    m->menu = NULL;
 
     /* Load the sort list */
     load_sortorder (m);

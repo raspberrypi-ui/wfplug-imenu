@@ -47,6 +47,7 @@ class WayfireNmenu : public WayfireWidget
 
     WfOption <int> padding {"panel/nmenu_padding"};
     WfOption <bool> show_tooltips {"panel/nmenu_show_tooltips"};
+    WfOption <bool> alphasort {"panel/nmenu_alpha_sort"};
 
     /* plugin */
     NmenuPlugin *m;

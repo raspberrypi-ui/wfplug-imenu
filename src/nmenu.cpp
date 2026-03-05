@@ -42,12 +42,14 @@ void WayfireNmenu::read_settings (void)
 {
     m->padding = padding;
     m->tooltips = show_tooltips;
+    m->alphasort = alphasort;
 }
 
 void WayfireNmenu::settings_changed_cb (void)
 {
     read_settings ();
     menu_set_padding (m);
+    if (m->alphasort) clear_sortorder (m);
     gtk_widget_set_tooltip_text (m->img, m->tooltips ? _("Click here to open applications menu") : NULL);
 }
 
@@ -84,6 +86,7 @@ void WayfireNmenu::init (Gtk::HBox *container)
     /* Setup callbacks */
     padding.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
     show_tooltips.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
+    alphasort.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
 }
 
 WayfireNmenu::~WayfireNmenu()
