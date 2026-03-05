@@ -78,7 +78,7 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y);
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data);
 static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer);
 static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data);
-static void read_menu_cache (NmenuPlugin *m);
+static int read_menu_cache (NmenuPlugin *m);
 static void free_entry (MenuEntry *ent);
 static int compare_entries (MenuEntry *a, MenuEntry *b);
 static void load_menu (NmenuPlugin* m, MenuCacheDir* dir);
@@ -96,10 +96,12 @@ static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 static void create_window (NmenuPlugin *m)
 {
     GtkCellRenderer *prend, *trend;
+    GtkTreePath *path = gtk_tree_path_new_first ();
     GtkBuilder *builder;
     GtkCellLayout *layout;
     GtkGesture *gesture;
-    GdkRectangle monitor_geometry;
+    GdkRectangle mon, cell;
+    int x, w, h, nr, nc, ni;
 
     textdomain (GETTEXT_PACKAGE);
     builder = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/gmenu.ui");
@@ -108,7 +110,7 @@ static void create_window (NmenuPlugin *m)
     m->srch = (GtkWidget *) gtk_builder_get_object (builder, "searchbar");
     m->scrw = (GtkWidget *) gtk_builder_get_object (builder, "scrollwin");
 
-    read_menu_cache (m);
+    ni = read_menu_cache (m);
 
     g_signal_connect (m->srch, "changed", G_CALLBACK (handle_search_changed), m);
     g_signal_connect (m->srch, "key-press-event", G_CALLBACK (handle_search_keypress), m);
@@ -153,8 +155,8 @@ static void create_window (NmenuPlugin *m)
     pressed = FALSE;
 
     /* realise */
-    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), 0), &monitor_geometry);
-    gtk_window_set_default_size (GTK_WINDOW (m->swin), monitor_geometry.width, monitor_geometry.height);
+    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), 0), &mon);
+    gtk_window_set_default_size (GTK_WINDOW (m->swin), mon.width, mon.height);
     gtk_layer_init_for_window (GTK_WINDOW (m->swin));
     gtk_layer_set_layer (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_LAYER_TOP);
     gtk_layer_set_monitor (GTK_WINDOW (m->swin), gdk_display_get_monitor (gdk_display_get_default (), 0));
@@ -167,13 +169,37 @@ static void create_window (NmenuPlugin *m)
     gtk_widget_set_events (m->swin, gtk_widget_get_events (m->swin) | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
     g_signal_connect (m->swin, "button-release-event", G_CALLBACK (handle_clickaway), m);
 
-    gtk_scrolled_window_set_max_content_width (GTK_SCROLLED_WINDOW (m->scrw), 500);
-    gtk_scrolled_window_set_min_content_width (GTK_SCROLLED_WINDOW (m->scrw), 500);
-    gtk_scrolled_window_set_max_content_height (GTK_SCROLLED_WINDOW (m->scrw), 400);
-    gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (m->scrw), 400);
-
     gtk_widget_show_all (m->swin);
     gtk_window_present (GTK_WINDOW (m->swin));
+
+    // calculate the size
+    gtk_icon_view_get_cell_rect (GTK_ICON_VIEW (m->stv), path, NULL, &cell);
+
+    // find the largest number of columns that will fit...
+    nc = mon.width / cell.width;
+    ni += ni / 2;
+    for (x = nc; x > 0; x--)
+    {
+        // for each possible number of columns, calculate the window height
+        // and compare the resulting window to the aspect ratio of the display
+        w = x * cell.width;
+        nr = ni / x;
+        h = nr * cell.height;
+        if (h > (w * mon.height) / mon.width) break;
+    }
+
+    // check the resulting window would actually fit - if not, maximise based on display size
+    if (h > mon.height - cell.height)
+    {
+        w = mon.width - cell.width;
+        h = mon.height - cell.height;
+    }
+
+    gtk_scrolled_window_set_max_content_width (GTK_SCROLLED_WINDOW (m->scrw), w);
+    gtk_scrolled_window_set_min_content_width (GTK_SCROLLED_WINDOW (m->scrw), w);
+    gtk_scrolled_window_set_max_content_height (GTK_SCROLLED_WINDOW (m->scrw), h);
+    gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (m->scrw), h);
+    g_object_unref (builder);
 }
 
 static void destroy_window (NmenuPlugin *m)
@@ -481,11 +507,12 @@ static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
 
 /* Load menu from cache */
 
-static void read_menu_cache (NmenuPlugin *m)
+static int read_menu_cache (NmenuPlugin *m)
 {
     MenuCacheDir *dir = NULL;
     MenuEntry *entry;
     GList *l;
+    int count = 0;
 
     if (m->apps) g_list_free_full (m->apps, (GDestroyNotify) free_entry);
     m->apps = NULL;
@@ -505,9 +532,11 @@ static void read_menu_cache (NmenuPlugin *m)
     {
         entry = (MenuEntry *) l->data;
         gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, entry->icon, 1, entry->name, 2, entry->id, 3, entry->comment, -1);
+        count++;
         l = l->next;
     }
     g_signal_handlers_unblock_by_func (m->applist, G_CALLBACK (handle_drag_and_drop_done), m);
+    return count;
 }
 
 static void free_entry (MenuEntry *entry)
