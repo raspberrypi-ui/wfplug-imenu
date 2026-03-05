@@ -375,8 +375,6 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
         case GDK_KEY_Right :    gtk_widget_grab_focus (m->stv);
                                 // propagate the key press event to the icon view...
                                 g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
-                                event->type = GDK_KEY_RELEASE;
-                                g_signal_emit_by_name (m->stv, "key-release-event", event, &ret);
                                 return FALSE;
 
         default :               return FALSE;
