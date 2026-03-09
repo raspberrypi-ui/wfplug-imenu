@@ -41,7 +41,7 @@ extern void show_properties_dialog (MenuCacheItem *item);
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
 
-#define CELL_WIDTH 100
+#define CELL_WIDTH 120
 
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
@@ -106,7 +106,12 @@ static void create_window (NmenuPlugin *m)
     GtkCellLayout *layout;
     GtkGesture *gesture;
     GdkRectangle mon, cell;
-    int x, w, h, nr, nc, ni;
+    GtkStyleContext *style_context;
+    GtkStateFlags state;
+    PangoContext *context;
+    PangoFontMetrics *metrics;
+    PangoFontDescription *font_desc;
+    int x, w, h, nr, nc, ni, xs, ys;
 
     textdomain (GETTEXT_PACKAGE);
     builder = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/gmenu.ui");
@@ -146,13 +151,22 @@ static void create_window (NmenuPlugin *m)
     g_value_init (&val, G_TYPE_INT);
     g_value_set_int (&val, gtk_widget_get_scale_factor (m->img));
     g_object_set_property (G_OBJECT (prend), "scale", &val);
-    gtk_cell_renderer_set_fixed_size (prend, CELL_WIDTH, -1);
     gtk_cell_layout_pack_start (layout, prend, FALSE);
     gtk_cell_layout_add_attribute (layout, prend, "pixbuf", 0);
 
+    /* get the font height */
+    style_context = gtk_widget_get_style_context (m->stv);
+    state = gtk_widget_get_state_flags (m->stv);
+    gtk_style_context_get (style_context, state, "font", &font_desc, NULL);
+    context = gtk_widget_get_pango_context (m->stv);
+    metrics = pango_context_get_metrics (context, font_desc, pango_context_get_language (context));
+    h = pango_font_metrics_get_ascent (metrics) + pango_font_metrics_get_descent (metrics);
+    pango_font_metrics_unref (metrics);
+    pango_font_description_free (font_desc);
+
     trend = gtk_cell_renderer_text_new ();
     gtk_cell_renderer_set_alignment (trend, 0.5, 0.0);
-    gtk_cell_renderer_text_set_fixed_height_from_font (GTK_CELL_RENDERER_TEXT (trend), 2);
+    gtk_cell_renderer_set_fixed_size (trend, CELL_WIDTH, 2 * PANGO_PIXELS (h));
     g_object_set (trend, "wrap-width", CELL_WIDTH, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
     gtk_cell_layout_pack_start (layout, trend, FALSE);
     gtk_cell_layout_add_attribute (layout, trend, "text", 1);
@@ -190,6 +204,8 @@ static void create_window (NmenuPlugin *m)
 
     // calculate the size
     gtk_icon_view_get_cell_rect (GTK_ICON_VIEW (m->stv), path, NULL, &cell);
+    xs = gtk_icon_view_get_row_spacing (GTK_ICON_VIEW (m->stv));
+    ys = gtk_icon_view_get_column_spacing (GTK_ICON_VIEW (m->stv));
 
     // find the largest number of columns that will fit...
     nc = mon.width / cell.width;
@@ -198,9 +214,9 @@ static void create_window (NmenuPlugin *m)
     {
         // for each possible number of columns, calculate the window height
         // and compare the resulting window to the aspect ratio of the display
-        w = x * cell.width;
+        w = x * cell.width + (x - 1) * xs;
         nr = ni / x;
-        h = nr * cell.height;
+        h = nr * cell.height + (nr - 1) * ys;
         if (h > (w * mon.height) / mon.width) break;
     }
 
