@@ -477,6 +477,8 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y)
     GtkWidget *item, *menu;
     GdkRectangle rect = {x, y, 0, 0};
 
+    if (!strstr (id, "desktop")) return;
+
     menu = gtk_menu_new ();
 
     item = gtk_menu_item_new_with_label (_("Add to desktop"));
