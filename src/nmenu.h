@@ -54,6 +54,8 @@ typedef struct
 
     GList *apps;
     GList *sortorder;
+    int dir;
+    gboolean hierarchic;
 } NmenuPlugin;
 
 typedef struct

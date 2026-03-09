@@ -82,6 +82,10 @@ static int read_menu_cache (NmenuPlugin *m);
 static void free_entry (MenuEntry *ent);
 static int compare_entries (MenuEntry *a, MenuEntry *b);
 static void load_menu (NmenuPlugin* m, MenuCacheDir* dir);
+static int read_menu_cache_hierarchic (NmenuPlugin *m);
+static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu);
+static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
+static void change_dir (NmenuPlugin *m, char *str);
 static void load_sortorder (NmenuPlugin* m);
 static void save_sortorder (NmenuPlugin* m);
 static void set_alphasort (gboolean state);
@@ -110,17 +114,27 @@ static void create_window (NmenuPlugin *m)
     m->srch = (GtkWidget *) gtk_builder_get_object (builder, "searchbar");
     m->scrw = (GtkWidget *) gtk_builder_get_object (builder, "scrollwin");
 
-    ni = read_menu_cache (m);
+    m->dir = 0;
 
     g_signal_connect (m->srch, "changed", G_CALLBACK (handle_search_changed), m);
     g_signal_connect (m->srch, "key-press-event", G_CALLBACK (handle_search_keypress), m);
     g_signal_connect (m->srch, "button_release-event", G_CALLBACK (handle_search_button), m);
 
     /* create the filtered list for the tree view */
-    m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
-    gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
-
-    gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
+    if (m->hierarchic)
+    {
+        ni = read_menu_cache_hierarchic (m);
+        m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
+        gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps_hierarchic, m, NULL);
+        gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->flist));
+    }
+    else
+    {
+        ni = read_menu_cache (m);
+        m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
+        gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
+        gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
+    }
     if (m->tooltips) gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), 3);
 
     /* set up the icon view */
@@ -248,8 +262,12 @@ static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, 
     gtk_tree_model_get_iter (mod, &fitem, path);
     gtk_tree_model_get (mod, &fitem, 2, &str, -1);
 
-    gtk_launch (str);
-    destroy_window (m);
+    if (strstr (str, "desktop"))
+    {
+        gtk_launch (str);
+        destroy_window (m);
+    }
+    else change_dir (m ,str);
 }
 
 static gboolean handle_iconview_buttonpress (GtkWidget *, GdkEventButton *event, gpointer user_data)
@@ -300,8 +318,12 @@ static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *event, g
             ivm = gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv));
             gtk_tree_model_get_iter (ivm, &fitem, path);
             gtk_tree_model_get (ivm, &fitem, 2, &str, -1);
-            gtk_launch (str);
-            destroy_window (m);
+            if (strstr (str, "desktop"))
+            {
+                gtk_launch (str);
+                destroy_window (m);
+            }
+            else change_dir (m, str);
         }
         return TRUE;
     }
@@ -388,8 +410,12 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
                                 {
                                     gtk_tree_model_get_iter (mod, &iter, (GtkTreePath *) list->data); 
                                     gtk_tree_model_get (mod, &iter, 2, &str, -1);
-                                    gtk_launch (str);
-                                    destroy_window (m);
+                                    if (strstr (str, "desktop"))
+                                    {
+                                        gtk_launch (str);
+                                        destroy_window (m);
+                                    }
+                                    else change_dir (m, str);
                                 }
                                 return TRUE;
 
@@ -413,7 +439,7 @@ static void handle_search_changed (GtkWidget *entry, gpointer user_data)
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     GtkTreePath *path = gtk_tree_path_new_from_indices (0, -1);
 
-    if (!strlen (gtk_entry_get_text (GTK_ENTRY (entry))))
+    if (!m->hierarchic && !strlen (gtk_entry_get_text (GTK_ENTRY (entry))))
     {
         gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
         gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), TRUE);
@@ -614,6 +640,96 @@ static void load_menu (NmenuPlugin* m, MenuCacheDir* dir)
     g_slist_free (children);
 }
 
+/* Hierarchic view */
+
+static int read_menu_cache_hierarchic (NmenuPlugin *m)
+{
+    MenuCacheDir *dir = NULL;
+    int count = 0;
+    char *str;
+
+    if (m->applist) gtk_list_store_clear (m->applist);
+
+    while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
+    count = load_menu_hierarchic (m, dir, 0);
+    menu_cache_item_unref (MENU_CACHE_ITEM (dir));
+
+    str = g_strdup_printf ("%d", 0);
+    gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, "go-previous"), 1, _("Back"), 2, str, 4, -1, -1);
+    g_free (str);
+
+    return count;
+}
+
+static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
+{
+    GSList *l, *children;
+    MenuCacheItem *item;
+    int count = 0, max = 0, this = menu, res;
+    char *str1, *str2;
+
+    if (!menu_cache_dir_is_visible (dir)) return 0;
+
+    children = menu_cache_dir_list_children (dir);
+
+    for (l = children; l; l = l->next)
+    {
+        item = MENU_CACHE_ITEM (l->data);
+        if ((menu_cache_item_get_type (item) != MENU_CACHE_TYPE_APP) || (menu_cache_app_get_is_visible (MENU_CACHE_APP (item), SHOW_IN_LXDE)))
+        {
+            switch (menu_cache_item_get_type (item))
+            {
+                case MENU_CACHE_TYPE_DIR :  menu++;
+                                            str1 = g_markup_escape_text (menu_cache_item_get_name (item), -1);
+                                            str2 = g_strdup_printf ("%d", menu);
+                                            gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
+                                                1, str1, 2, str2, 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                            g_free (str1);
+                                            g_free (str2);
+                                            count++;
+                                            res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu) + 1;
+                                            if (res > max) max = res;
+                                            break;
+
+                case MENU_CACHE_TYPE_APP :  gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
+                                                1, menu_cache_item_get_name (item), 2, menu_cache_item_get_id (item), 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                            count++;
+                                            break;
+
+                default:                    break;
+            }
+        }
+    }
+
+    g_slist_free (children);
+    if (count > max) max = count;
+    return max;
+}
+
+static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+{
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
+    gboolean res = FALSE;
+    char *str;
+    int menu;
+
+    gtk_tree_model_get (model, iter, 1, &str, 4, &menu, -1);
+    if (menu == -1 && m->dir != 0) res = TRUE;
+    else if (menu == m->dir)
+    {
+        if (!gtk_entry_get_text (GTK_ENTRY (m->srch)) || strcasestr (str, gtk_entry_get_text (GTK_ENTRY (m->srch)))) res = TRUE;
+    }
+    g_free (str);
+    return res;
+}
+
+static void change_dir (NmenuPlugin *m, char *str)
+{
+    sscanf (str, "%d", &(m->dir));
+    gtk_entry_set_text (GTK_ENTRY (m->srch), "");
+    gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (m->flist));
+}
+
 /* Sorting */
 
 static void load_sortorder (NmenuPlugin* m)
@@ -773,9 +889,10 @@ void menu_init (NmenuPlugin *m)
     g_signal_connect (m->plugin, "clicked", G_CALLBACK (menu_button_clicked), m);
 
     /* Set up variables */
-    m->applist = gtk_list_store_new (4, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+    m->applist = gtk_list_store_new (5, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
     g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);
     m->swin = NULL;
+    m->hierarchic = TRUE;
 
     /* Load the sort list */
     load_sortorder (m);
