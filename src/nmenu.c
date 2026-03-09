@@ -153,7 +153,7 @@ static void create_window (NmenuPlugin *m)
     gtk_cell_renderer_set_alignment (trend, 0.5, 0.0);
     g_object_set (trend, "wrap-width", CELL_WIDTH, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
     gtk_cell_layout_pack_start (layout, trend, FALSE);
-    gtk_cell_layout_add_attribute (layout, trend, "markup", 1);
+    gtk_cell_layout_add_attribute (layout, trend, "text", 1);
 
     g_signal_connect (m->stv, "item-activated", G_CALLBACK (handle_iconview_selected), m);
     g_signal_connect (m->stv, "button-press-event", G_CALLBACK (handle_iconview_buttonpress), m);
@@ -666,7 +666,7 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
     GSList *l, *children;
     MenuCacheItem *item;
     int count = 0, max = 0, this = menu, res;
-    char *str1, *str2;
+    char *str;
 
     if (!menu_cache_dir_is_visible (dir)) return 0;
 
@@ -680,12 +680,10 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
             switch (menu_cache_item_get_type (item))
             {
                 case MENU_CACHE_TYPE_DIR :  menu++;
-                                            str1 = g_markup_escape_text (menu_cache_item_get_name (item), -1);
-                                            str2 = g_strdup_printf ("%d", menu);
+                                            str = g_strdup_printf ("%d", menu);
                                             gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                                1, str1, 2, str2, 3, menu_cache_item_get_comment (item), 4, this, -1);
-                                            g_free (str1);
-                                            g_free (str2);
+                                                1, menu_cache_item_get_name (item), 2, str, 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                            g_free (str);
                                             count++;
                                             res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu) + 1;
                                             if (res > max) max = res;
