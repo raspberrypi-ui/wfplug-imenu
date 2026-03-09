@@ -41,7 +41,8 @@ extern void show_properties_dialog (MenuCacheItem *item);
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
 
-#define CELL_WIDTH 120
+#define CELL_WIDTH  120
+#define NUM_LINES   2
 
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
@@ -87,6 +88,7 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m);
 static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu);
 static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
 static void change_dir (NmenuPlugin *m, char *str);
+static char *ellipsize_lines (NmenuPlugin *m, const char *text);
 static void load_sortorder (NmenuPlugin* m);
 static void save_sortorder (NmenuPlugin* m);
 static void set_alphasort (gboolean state);
@@ -166,7 +168,7 @@ static void create_window (NmenuPlugin *m)
 
     trend = gtk_cell_renderer_text_new ();
     gtk_cell_renderer_set_alignment (trend, 0.5, 0.0);
-    gtk_cell_renderer_set_fixed_size (trend, CELL_WIDTH, 2 * PANGO_PIXELS (h));
+    gtk_cell_renderer_set_fixed_size (trend, CELL_WIDTH, NUM_LINES * PANGO_PIXELS (h));
     g_object_set (trend, "wrap-width", CELL_WIDTH, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
     gtk_cell_layout_pack_start (layout, trend, FALSE);
     gtk_cell_layout_add_attribute (layout, trend, "text", 1);
@@ -645,7 +647,7 @@ static void load_menu (NmenuPlugin* m, MenuCacheDir* dir)
 
                 case MENU_CACHE_TYPE_APP :  entry = g_new0 (MenuEntry, 1);
                                             entry->id = g_strdup (menu_cache_item_get_id (item));
-                                            entry->name = g_strdup (menu_cache_item_get_name (item));
+                                            entry->name = ellipsize_lines (m, menu_cache_item_get_name (item));
                                             entry->comment = g_strdup (menu_cache_item_get_comment (item));
                                             entry->icon = load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item));
                                             entry->sortorder = m->sortorder;
@@ -685,8 +687,9 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
 {
     GSList *l, *children;
     MenuCacheItem *item;
+    MenuCacheType type;
     int count = 0, max = 0, this = menu, res;
-    char *str;
+    char *name, *str;
 
     if (!menu_cache_dir_is_visible (dir)) return 0;
 
@@ -695,6 +698,12 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
     for (l = children; l; l = l->next)
     {
         item = MENU_CACHE_ITEM (l->data);
+        type = menu_cache_item_get_type (item);
+
+        if (type != MENU_CACHE_TYPE_DIR && type != MENU_CACHE_TYPE_APP) continue;
+
+        name = ellipsize_lines (m, menu_cache_item_get_name (item));
+
         switch (menu_cache_item_get_type (item))
         {
             case MENU_CACHE_TYPE_DIR :  menu++;
@@ -703,7 +712,7 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
                                         {
                                             str = g_strdup_printf ("%d", menu);
                                             gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                                1, menu_cache_item_get_name (item), 2, str, 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                                1, name, 2, str, 3, menu_cache_item_get_comment (item), 4, this, -1);
                                             g_free (str);
                                             count++;
                                             if (res > max) max = res;
@@ -712,12 +721,13 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
 
             case MENU_CACHE_TYPE_APP :  if (!menu_cache_app_get_is_visible (MENU_CACHE_APP (item), SHOW_IN_LXDE)) continue;
                                         gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                            1, menu_cache_item_get_name (item), 2, menu_cache_item_get_id (item), 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                            1, name, 2, menu_cache_item_get_id (item), 3, menu_cache_item_get_comment (item), 4, this, -1);
                                         count++;
                                         break;
 
             default:                    break;
         }
+        g_free (name);
     }
 
     g_slist_free (children);
@@ -747,6 +757,30 @@ static void change_dir (NmenuPlugin *m, char *str)
     sscanf (str, "%d", &(m->dir));
     gtk_entry_set_text (GTK_ENTRY (m->srch), "");
     gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (m->flist));
+}
+
+static char *ellipsize_lines (NmenuPlugin *m, const char *text)
+{
+    PangoContext *context;
+    PangoLayout *layout;
+    char *ptr, *trytext = g_strdup (text);
+
+    context = gtk_widget_get_pango_context (m->stv);
+    layout = pango_layout_new (context);
+    pango_layout_set_width (layout, PANGO_SCALE * CELL_WIDTH);
+    pango_layout_set_text (layout, trytext, -1);
+    while (pango_layout_get_line_count (layout) > NUM_LINES)
+    {
+        ptr = strrchr (trytext, ' ');
+        if (!ptr || ptr - 3 < trytext) break;
+        sprintf (ptr - 3, "...");
+        pango_layout_set_text (layout, trytext, -1);
+    }
+
+    ptr = g_strdup (trytext);
+    g_object_unref (layout);
+    g_free (trytext);
+    return ptr;
 }
 
 /* Sorting */
