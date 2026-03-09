@@ -47,10 +47,11 @@ extern void show_properties_dialog (MenuCacheItem *item);
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
 
-conf_table_t conf_table[4] = {
+conf_table_t conf_table[5] = {
     {CONF_TYPE_INT,  "padding",          N_("Icon horizontal padding"),     NULL},
     {CONF_TYPE_BOOL, "show_tooltips",    N_("Show tooltips"),               NULL},
     {CONF_TYPE_BOOL, "alpha_sort",       N_("Sort items alphabetically"),   NULL},
+    {CONF_TYPE_BOOL, "hierarchic",       N_("Use menu categories"),         NULL},
     {CONF_TYPE_NONE, NULL,               NULL,                              NULL}
 };
 
@@ -890,7 +891,6 @@ void menu_init (NmenuPlugin *m)
     m->applist = gtk_list_store_new (5, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
     g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);
     m->swin = NULL;
-    m->hierarchic = TRUE;
 
     /* Load the sort list */
     load_sortorder (m);

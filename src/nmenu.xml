@@ -16,6 +16,10 @@
 		<_short>Searchable Menu Sort Alphabetically</_short>
 		<default>true</default>
 	</option>
+	<option name="nmenu_hierarchic" type="bool">
+		<_short>Searchable Menu Hierarchic</_short>
+		<default>true</default>
+	</option>
 	</group>
 	</plugin>
 </wf-panel-pi>

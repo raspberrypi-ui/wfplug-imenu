@@ -67,7 +67,7 @@ typedef struct
     GList *sortorder;
 } MenuEntry;
 
-extern conf_table_t conf_table[4];
+extern conf_table_t conf_table[5];
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */

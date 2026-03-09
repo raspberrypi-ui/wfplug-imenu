@@ -29,6 +29,10 @@ msgstr "Show Tooltips"
 msgid "Sort items alphabetically"
 msgstr "Sort Items Alphabetically"
 
+#: ../src/nmenu.c:54
+msgid "Use menu categories"
+msgstr "Use Menu Categories"
+
 #: ../src/nmenu.c:429
 msgid "Add to desktop"
 msgstr "Add to Desktop"
