@@ -152,6 +152,7 @@ static void create_window (NmenuPlugin *m)
 
     trend = gtk_cell_renderer_text_new ();
     gtk_cell_renderer_set_alignment (trend, 0.5, 0.0);
+    gtk_cell_renderer_text_set_fixed_height_from_font (GTK_CELL_RENDERER_TEXT (trend), 2);
     g_object_set (trend, "wrap-width", CELL_WIDTH, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
     gtk_cell_layout_pack_start (layout, trend, FALSE);
     gtk_cell_layout_add_attribute (layout, trend, "text", 1);
@@ -678,27 +679,28 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
     for (l = children; l; l = l->next)
     {
         item = MENU_CACHE_ITEM (l->data);
-        if ((menu_cache_item_get_type (item) != MENU_CACHE_TYPE_APP) || (menu_cache_app_get_is_visible (MENU_CACHE_APP (item), SHOW_IN_LXDE)))
+        switch (menu_cache_item_get_type (item))
         {
-            switch (menu_cache_item_get_type (item))
-            {
-                case MENU_CACHE_TYPE_DIR :  menu++;
+            case MENU_CACHE_TYPE_DIR :  menu++;
+                                        res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu) + 1;
+                                        if (res > 1)
+                                        {
                                             str = g_strdup_printf ("%d", menu);
                                             gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
                                                 1, menu_cache_item_get_name (item), 2, str, 3, menu_cache_item_get_comment (item), 4, this, -1);
                                             g_free (str);
                                             count++;
-                                            res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu) + 1;
                                             if (res > max) max = res;
-                                            break;
+                                        }
+                                        break;
 
-                case MENU_CACHE_TYPE_APP :  gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                                1, menu_cache_item_get_name (item), 2, menu_cache_item_get_id (item), 3, menu_cache_item_get_comment (item), 4, this, -1);
-                                            count++;
-                                            break;
+            case MENU_CACHE_TYPE_APP :  if (!menu_cache_app_get_is_visible (MENU_CACHE_APP (item), SHOW_IN_LXDE)) continue;
+                                        gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
+                                            1, menu_cache_item_get_name (item), 2, menu_cache_item_get_id (item), 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                        count++;
+                                        break;
 
-                default:                    break;
-            }
+            default:                    break;
         }
     }
 
