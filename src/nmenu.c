@@ -51,6 +51,17 @@ extern void show_properties_dialog (MenuCacheItem *item);
 #define CELL_WIDTH  120
 #define NUM_LINES   2
 
+typedef enum
+{
+    FM_WP_COLOR,
+    FM_WP_STRETCH,
+    FM_WP_FIT,
+    FM_WP_CENTER,
+    FM_WP_TILE,
+    FM_WP_CROP,
+    FM_WP_SCREEN
+}FmWallpaperMode;
+
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
@@ -68,6 +79,7 @@ conf_table_t conf_table[5] = {
 /*----------------------------------------------------------------------------*/
 
 static void create_window (NmenuPlugin *m);
+static void load_background (GdkWindow *window, int mnum);
 static void destroy_window (NmenuPlugin *m);
 static void window_destroyed (GtkWidget *, gpointer data);
 static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
@@ -214,6 +226,7 @@ static void create_window (NmenuPlugin *m)
     gtk_widget_show_all (m->swin);
     gtk_widget_set_visible (m->title, m->hierarchic);
     gtk_window_present (GTK_WINDOW (m->swin));
+    load_background (gtk_widget_get_window (m->swin), 0);
 
     // calculate the size
     gtk_icon_view_get_cell_rect (GTK_ICON_VIEW (m->stv), path, NULL, &cell);
@@ -240,6 +253,176 @@ static void create_window (NmenuPlugin *m)
     gtk_scrolled_window_set_max_content_height (GTK_SCROLLED_WINDOW (m->scrw), h);
     gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (m->scrw), h);
     g_object_unref (builder);
+}
+
+static void load_background (GdkWindow *window, int mnum)
+{
+    cairo_t *cr;
+    cairo_surface_t *bg;
+    cairo_pattern_t *pattern;
+    GdkPixbuf *pix = NULL, *modpix;
+    int src_x, src_y, src_w, src_h, dest_x, dest_y, dest_w, dest_h, x, y, w, h;
+    guint32 pixcol;
+    GdkRectangle geom;
+    FmWallpaperMode wp_mode;
+    GdkRGBA desktop_bg;
+    char *fname, *buf, *wallpaper;
+    GKeyFile *kf;
+    GError *err;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    buf = gdk_screen_get_monitor_plug_name (gdk_display_get_default_screen (gdk_display_get_default ()), mnum);
+#pragma GCC diagnostic pop
+    fname = g_strdup_printf ("desktop-items-%s.conf", buf);
+    g_free (buf);
+    buf = g_build_filename (g_get_user_config_dir (), "pcmanfm", "default", fname, NULL);
+    g_free (fname);
+
+    // read in data from file to a key file
+    kf = g_key_file_new ();
+    if (g_key_file_load_from_file (kf, buf, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
+    {
+        g_free (buf);
+        // get data from the key file
+        err = NULL;
+        buf = g_key_file_get_string (kf, "*", "desktop_bg", &err);
+        if (err == NULL && buf) gdk_rgba_parse (&desktop_bg, buf);
+        g_free (buf);
+
+        err = NULL;
+        buf = g_key_file_get_string (kf, "*", "wallpaper", &err);
+        if (err == NULL && buf) wallpaper = g_strdup (buf);
+        g_free (buf);
+
+        err = NULL;
+        buf = g_key_file_get_string (kf, "*", "wallpaper_mode", &err);
+        if (err == NULL && buf)
+        {
+            if (!g_strcmp0 (buf, "color")) wp_mode = FM_WP_COLOR;
+            if (!g_strcmp0 (buf, "stretch")) wp_mode = FM_WP_STRETCH;
+            if (!g_strcmp0 (buf, "fit")) wp_mode = FM_WP_FIT;
+            if (!g_strcmp0 (buf, "center")) wp_mode = FM_WP_CENTER;
+            if (!g_strcmp0 (buf, "tile")) wp_mode = FM_WP_TILE;
+            if (!g_strcmp0 (buf, "crop")) wp_mode = FM_WP_CROP;
+            if (!g_strcmp0 (buf, "screen")) wp_mode = FM_WP_SCREEN;
+        }
+    }
+    g_free (buf);
+    g_key_file_free (kf);
+
+    if (wp_mode == FM_WP_COLOR) pattern = cairo_pattern_create_rgb (desktop_bg.red, desktop_bg.green, desktop_bg.blue);
+    else
+    {
+        gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), mnum), &geom);
+        pix = gdk_pixbuf_new_from_file (wallpaper, NULL);
+        src_w = gdk_pixbuf_get_width (pix);
+        src_h = gdk_pixbuf_get_height (pix);
+        dest_w = geom.width;
+        dest_h = geom.height;
+        x = wp_mode == FM_WP_SCREEN ? -geom.x : 0;
+        y = wp_mode == FM_WP_SCREEN ? -geom.y : 0;
+        pixcol = (int)(desktop_bg.alpha * 255) + (((int)(desktop_bg.blue * 255)) << 8)
+            + (((int)(desktop_bg.green * 255)) << 16) + (((int)(desktop_bg.red * 255)) << 24);
+
+        bg = cairo_image_surface_create (CAIRO_FORMAT_RGB24, dest_w, dest_h);
+        cr = cairo_create (bg);
+
+        if (gdk_pixbuf_get_has_alpha (pix) || wp_mode == FM_WP_CENTER || wp_mode == FM_WP_FIT)
+        {
+            gdk_cairo_set_source_rgba (cr, &desktop_bg);
+            cairo_rectangle (cr, 0, 0, dest_w, dest_h);
+            cairo_fill (cr);
+        }
+
+        if (dest_w != src_w || dest_h != src_h)
+        {
+            switch (wp_mode)
+            {
+                case FM_WP_STRETCH:
+                case FM_WP_SCREEN:
+                    // simple scaling to new size
+                    modpix = gdk_pixbuf_scale_simple (pix, dest_w, dest_h, GDK_INTERP_BILINEAR);
+                    g_object_unref (pix);
+                    pix = modpix;
+                    break;
+
+                case FM_WP_FIT:
+                case FM_WP_CROP:
+                    // create a consistent x-y scaling to fit either the shortest or the longest side to the screen
+                    gdouble w_ratio = (float) dest_w / src_w;
+                    gdouble h_ratio = (float) dest_h / src_h;
+                    gdouble ratio = wp_mode == FM_WP_FIT ? MIN (w_ratio, h_ratio) : MAX (w_ratio, h_ratio);
+                    if (ratio != 1.0)
+                    {
+                        src_w = ratio == w_ratio ? dest_w : src_w * ratio;
+                        src_h = ratio == h_ratio ? dest_h : src_h * ratio;
+                        modpix = gdk_pixbuf_scale_simple (pix, src_w, src_h, GDK_INTERP_BILINEAR);
+                        g_object_unref (pix);
+                        pix = modpix;
+                    }
+                    // fallthrough
+                case FM_WP_CENTER:
+                    // create a new pixbuf filled with background
+                    modpix = gdk_pixbuf_new (GDK_COLORSPACE_RGB, gdk_pixbuf_get_has_alpha (pix), 8, dest_w, dest_h);
+                    gdk_pixbuf_fill (modpix, pixcol);
+
+                    // calculate how to centre the scaled pixbuf, discarding edges if needed
+                    src_x = src_w > dest_w ? (src_w - dest_w) / 2 : 0;
+                    src_y = src_h > dest_h ? (src_h - dest_h) / 2 : 0;
+                    w = MIN (src_w, dest_w);
+                    h = MIN (src_h, dest_h);
+                    dest_x = dest_w > src_w ? (dest_w - src_w) / 2 : 0;
+                    dest_y = dest_h > src_h ? (dest_h - src_h) / 2 : 0;
+                    gdk_pixbuf_copy_area (pix, src_x, src_y, w, h, modpix, dest_x, dest_y);
+
+                    g_object_unref (pix);
+                    pix = modpix;
+                    break;
+
+                case FM_WP_TILE:
+                    // create a new pixbuf filled with background
+                    modpix = gdk_pixbuf_new (GDK_COLORSPACE_RGB, gdk_pixbuf_get_has_alpha (pix), 8, dest_w, dest_h);
+                    gdk_pixbuf_fill (modpix, pixcol);
+
+                    // loop x and y, copying the source repeatedly into the destination pixbuf
+                    dest_y = 0;
+                    while (dest_y < dest_h)
+                    {
+                        dest_x = 0;
+                        while (dest_x < dest_w)
+                        {
+                            w = dest_x + src_w > dest_w ? dest_w - dest_x : src_w;
+                            h = dest_y + src_h > dest_h ? dest_h - dest_y : src_h;
+                            gdk_pixbuf_copy_area (pix, 0, 0, w, h, modpix, dest_x, dest_y);
+                            dest_x += src_w;
+                        }
+                        dest_y += src_h;
+                    }
+
+                    g_object_unref (pix);
+                    pix = modpix;
+                    break;
+
+                default : break;
+            }
+        }
+
+        gdk_cairo_set_source_pixbuf (cr, pix, x, y);
+        cairo_paint (cr);
+        cairo_destroy (cr);
+
+        pattern = cairo_pattern_create_for_surface (bg);
+    }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    gdk_window_set_background_pattern (window, pattern);
+#pragma GCC diagnostic pop
+
+    gdk_window_invalidate_rect (window, NULL, TRUE);
+    cairo_pattern_destroy (pattern);
+    if (pix) g_object_unref (pix);
 }
 
 static void destroy_window (NmenuPlugin *m)
