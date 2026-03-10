@@ -181,7 +181,7 @@ static void create_window (NmenuPlugin *m)
     gtk_cell_renderer_set_fixed_size (trend, CELL_WIDTH, NUM_LINES * PANGO_PIXELS (h));
     g_object_set (trend, "wrap-width", CELL_WIDTH, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
     gtk_cell_layout_pack_start (layout, trend, FALSE);
-    gtk_cell_layout_add_attribute (layout, trend, "text", ENTRY_LABEL);
+    gtk_cell_layout_add_attribute (layout, trend, "markup", ENTRY_LABEL);
 
     g_signal_connect (m->stv, "item-activated", G_CALLBACK (handle_iconview_selected), m);
     g_signal_connect (m->stv, "button-press-event", G_CALLBACK (handle_iconview_buttonpress), m);
@@ -489,6 +489,9 @@ static void handle_search_changed (GtkWidget *entry, gpointer user_data)
         gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->flist));
         gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (m->flist));
         gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), FALSE);
+        if (strlen (gtk_entry_get_text (GTK_ENTRY (entry))))
+            gtk_label_set_markup (GTK_LABEL (m->title), _("<b>Search Results</b>"));
+        else set_title (m);
     }
 
     gtk_icon_view_select_path (GTK_ICON_VIEW (m->stv), path);
@@ -713,7 +716,7 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
     MenuCacheItem *item;
     MenuCacheType type;
     int count = 0, max = 0, this = menu, res;
-    char *name, *str;
+    char *name, *str, *title;
 
     if (!menu_cache_dir_is_visible (dir)) return 0;
 
@@ -734,10 +737,12 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
                                         res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu) + 1;
                                         if (res > 1)
                                         {
+                                            title = g_strdup_printf ("<b>%s</b>", name);
                                             str = g_strdup_printf ("%d", menu);
                                             gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                                ENTRY_LABEL, name, ENTRY_ID, str, ENTRY_COMMENT, menu_cache_item_get_comment (item),
+                                                ENTRY_LABEL, title, ENTRY_ID, str, ENTRY_COMMENT, menu_cache_item_get_comment (item),
                                                 ENTRY_NAME, menu_cache_item_get_name (item), ENTRY_MENU, this, -1);
+                                            g_free (title);
                                             g_free (str);
                                             count++;
                                             if (res > max) max = res;
@@ -844,7 +849,7 @@ static char *ellipsize_lines (NmenuPlugin *m, const char *text)
         pango_layout_set_text (layout, trytext, -1);
     }
 
-    ptr = g_strdup (trytext);
+    ptr = g_markup_escape_text (trytext, -1);
     g_object_unref (layout);
     g_free (trytext);
     return ptr;
