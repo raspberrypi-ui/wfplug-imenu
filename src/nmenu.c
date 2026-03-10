@@ -288,7 +288,7 @@ static void handle_iconview_selected (GtkIconView *iconview, GtkTreePath *path, 
     gtk_tree_model_get_iter (mod, &fitem, path);
     gtk_tree_model_get (mod, &fitem, 2, &str, -1);
 
-    if (strstr (str, "desktop"))
+    if (strstr (str, ".desktop"))
     {
         gtk_launch (str);
         destroy_window (m);
@@ -344,7 +344,7 @@ static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *event, g
             ivm = gtk_icon_view_get_model (GTK_ICON_VIEW (m->stv));
             gtk_tree_model_get_iter (ivm, &fitem, path);
             gtk_tree_model_get (ivm, &fitem, 2, &str, -1);
-            if (strstr (str, "desktop"))
+            if (strstr (str, ".desktop"))
             {
                 gtk_launch (str);
                 destroy_window (m);
@@ -443,7 +443,7 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
                                 {
                                     gtk_tree_model_get_iter (mod, &iter, (GtkTreePath *) list->data); 
                                     gtk_tree_model_get (mod, &iter, 2, &str, -1);
-                                    if (strstr (str, "desktop"))
+                                    if (strstr (str, ".desktop"))
                                     {
                                         gtk_launch (str);
                                         destroy_window (m);
@@ -516,7 +516,7 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y)
     GtkWidget *item, *menu;
     GdkRectangle rect = {x, y, 0, 0};
 
-    if (!strstr (id, "desktop")) return;
+    if (!strstr (id, ".desktop")) return;
 
     menu = gtk_menu_new ();
 
