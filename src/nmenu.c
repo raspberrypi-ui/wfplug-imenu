@@ -369,7 +369,13 @@ static gboolean handle_iconview_keypress (GtkWidget *, GdkEventKey *event, gpoin
 
     switch (event->keyval)
     {
-        case GDK_KEY_Escape :   destroy_window (m);
+        case GDK_KEY_Escape :   if (m->dir != 0)
+                                {
+                                    m->dir = 0;
+                                    gtk_entry_set_text (GTK_ENTRY (m->srch), "");
+                                    gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (m->flist));
+                                }
+                                else destroy_window (m);
                                 return TRUE;
 
         default :               return FALSE;
@@ -439,7 +445,13 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
                                 }
                                 return TRUE;
 
-        case GDK_KEY_Escape :   destroy_window (m);
+        case GDK_KEY_Escape :   if (m->dir != 0)
+                                {
+                                    m->dir = 0;
+                                    gtk_entry_set_text (GTK_ENTRY (m->srch), "");
+                                    gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (m->flist));
+                                }
+                                else destroy_window (m);
                                 return TRUE;
 
         case GDK_KEY_Up :
@@ -672,13 +684,13 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
 
     if (m->applist) gtk_list_store_clear (m->applist);
 
-    while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
-    count = load_menu_hierarchic (m, dir, 0);
-    menu_cache_item_unref (MENU_CACHE_ITEM (dir));
-
     str = g_strdup_printf ("%d", 0);
     gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, "go-previous"), 1, _("Back"), 2, str, 4, -1, -1);
     g_free (str);
+
+    while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
+    count = load_menu_hierarchic (m, dir, 0);
+    menu_cache_item_unref (MENU_CACHE_ITEM (dir));
 
     return count;
 }
@@ -738,17 +750,20 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
 static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
-    gboolean res = FALSE;
-    char *str;
+    gboolean res = FALSE, tmatch = FALSE;
+    char *str, *id;
     int menu;
 
-    gtk_tree_model_get (model, iter, 1, &str, 4, &menu, -1);
-    if (menu == -1 && m->dir != 0) res = TRUE;
-    else if (menu == m->dir)
-    {
-        if (!gtk_entry_get_text (GTK_ENTRY (m->srch)) || strcasestr (str, gtk_entry_get_text (GTK_ENTRY (m->srch)))) res = TRUE;
-    }
+    gtk_tree_model_get (model, iter, 1, &str, 2, &id, 4, &menu, -1);
+
+    if (strlen (gtk_entry_get_text (GTK_ENTRY (m->srch))) && strcasestr (str, gtk_entry_get_text (GTK_ENTRY (m->srch))) && strcasestr (id, ".desktop")) tmatch = TRUE;
+
+    if (tmatch && (m->dir == 0 || m->dir == menu)) res = TRUE;
+    else if (m->dir != 0 && menu == -1) res = TRUE;
+    else if (!strlen (gtk_entry_get_text (GTK_ENTRY (m->srch))) && m->dir == menu) res = TRUE;
+
     g_free (str);
+    g_free (id);
     return res;
 }
 
