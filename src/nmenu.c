@@ -223,17 +223,13 @@ static void create_window (NmenuPlugin *m)
         // for each possible number of columns, calculate the window height
         // and compare the resulting window to the aspect ratio of the display
         w = x * cell.width + (x - 1) * xs;
-        nr = (ni + (x >> 1)) / x;
+        nr = (ni + x - 1) / x;
         h = nr * cell.height + (nr - 1) * ys;
         if (h <= (w * mon.height) / mon.width) break;
     }
 
-    // check the resulting window would actually fit - if not, maximise based on display size
-    if (h > mon.height - cell.height)
-    {
-        w = mon.width - cell.width;
-        h = mon.height - cell.height;
-    }
+    // constrain to display size
+    if (h > mon.height - cell.height) h = mon.height - cell.height;
 
     gtk_scrolled_window_set_max_content_width (GTK_SCROLLED_WINDOW (m->scrw), w);
     gtk_scrolled_window_set_min_content_width (GTK_SCROLLED_WINDOW (m->scrw), w);
