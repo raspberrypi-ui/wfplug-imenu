@@ -41,6 +41,13 @@ extern void show_properties_dialog (MenuCacheItem *item);
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
 
+#define ENTRY_ICON      0
+#define ENTRY_NAME      1
+#define ENTRY_ID        2
+#define ENTRY_COMMENT   3
+#define ENTRY_LABEL     4
+#define ENTRY_MENU      5
+
 #define CELL_WIDTH  120
 #define NUM_LINES   2
 
@@ -143,7 +150,7 @@ static void create_window (NmenuPlugin *m)
         gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
         gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
     }
-    if (m->tooltips) gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), 3);
+    if (m->tooltips) gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), ENTRY_COMMENT);
 
     /* set up the icon view */
     layout = GTK_CELL_LAYOUT (m->stv);
@@ -154,7 +161,7 @@ static void create_window (NmenuPlugin *m)
     g_value_set_int (&val, gtk_widget_get_scale_factor (m->img));
     g_object_set_property (G_OBJECT (prend), "scale", &val);
     gtk_cell_layout_pack_start (layout, prend, FALSE);
-    gtk_cell_layout_add_attribute (layout, prend, "pixbuf", 0);
+    gtk_cell_layout_add_attribute (layout, prend, "pixbuf", ENTRY_ICON);
 
     /* get the font height */
     style_context = gtk_widget_get_style_context (m->stv);
@@ -171,7 +178,7 @@ static void create_window (NmenuPlugin *m)
     gtk_cell_renderer_set_fixed_size (trend, CELL_WIDTH, NUM_LINES * PANGO_PIXELS (h));
     g_object_set (trend, "wrap-width", CELL_WIDTH, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
     gtk_cell_layout_pack_start (layout, trend, FALSE);
-    gtk_cell_layout_add_attribute (layout, trend, "text", 1);
+    gtk_cell_layout_add_attribute (layout, trend, "text", ENTRY_LABEL);
 
     g_signal_connect (m->stv, "item-activated", G_CALLBACK (handle_iconview_selected), m);
     g_signal_connect (m->stv, "button-press-event", G_CALLBACK (handle_iconview_buttonpress), m);
@@ -591,7 +598,8 @@ static int read_menu_cache (NmenuPlugin *m)
     while (l)
     {
         entry = (MenuEntry *) l->data;
-        gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, entry->icon, 1, entry->name, 2, entry->id, 3, entry->comment, -1);
+        gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, entry->icon, ENTRY_NAME, entry->name,
+            ENTRY_ID, entry->id, ENTRY_COMMENT, entry->comment, ENTRY_LABEL, entry->label, -1);
         count++;
         l = l->next;
     }
@@ -604,6 +612,7 @@ static void free_entry (MenuEntry *entry)
     g_free (entry->id);
     g_free (entry->name);
     g_free (entry->comment);
+    g_free (entry->label);
     g_object_unref (entry->icon);
     g_free (entry);
 }
@@ -659,7 +668,8 @@ static void load_menu (NmenuPlugin* m, MenuCacheDir* dir)
 
                 case MENU_CACHE_TYPE_APP :  entry = g_new0 (MenuEntry, 1);
                                             entry->id = g_strdup (menu_cache_item_get_id (item));
-                                            entry->name = ellipsize_lines (m, menu_cache_item_get_name (item));
+                                            entry->name = g_strdup (menu_cache_item_get_name (item));
+                                            entry->label = ellipsize_lines (m, menu_cache_item_get_name (item));
                                             entry->comment = g_strdup (menu_cache_item_get_comment (item));
                                             entry->icon = load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item));
                                             entry->sortorder = m->sortorder;
@@ -685,7 +695,8 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
     if (m->applist) gtk_list_store_clear (m->applist);
 
     str = g_strdup_printf ("%d", 0);
-    gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, "go-previous"), 1, _("Back"), 2, str, 4, -1, -1);
+    gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, "go-previous"),
+        ENTRY_LABEL, _("Back"), ENTRY_NAME, _("Back"), ENTRY_ID, str, ENTRY_MENU, -1, -1);
     g_free (str);
 
     while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
@@ -723,8 +734,9 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
                                         if (res > 1)
                                         {
                                             str = g_strdup_printf ("%d", menu);
-                                            gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                                1, name, 2, str, 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                            gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
+                                                ENTRY_LABEL, name, ENTRY_ID, str, ENTRY_COMMENT, menu_cache_item_get_comment (item),
+                                                ENTRY_NAME, menu_cache_item_get_name (item), ENTRY_MENU, this, -1);
                                             g_free (str);
                                             count++;
                                             if (res > max) max = res;
@@ -732,8 +744,9 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
                                         break;
 
             case MENU_CACHE_TYPE_APP :  if (!menu_cache_app_get_is_visible (MENU_CACHE_APP (item), SHOW_IN_LXDE)) continue;
-                                        gtk_list_store_insert_with_values (m->applist, NULL, -1, 0, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                            1, name, 2, menu_cache_item_get_id (item), 3, menu_cache_item_get_comment (item), 4, this, -1);
+                                        gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
+                                            ENTRY_LABEL, name, ENTRY_ID, menu_cache_item_get_id (item), ENTRY_COMMENT, menu_cache_item_get_comment (item),
+                                            ENTRY_NAME, menu_cache_item_get_name (item), ENTRY_MENU, this, -1);
                                         count++;
                                         break;
 
@@ -751,18 +764,18 @@ static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, 
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     gboolean res = FALSE, tmatch = FALSE;
-    char *str, *id;
+    char *name, *id;
     int menu;
 
-    gtk_tree_model_get (model, iter, 1, &str, 2, &id, 4, &menu, -1);
+    gtk_tree_model_get (model, iter, ENTRY_NAME, &name, ENTRY_ID, &id, ENTRY_MENU, &menu, -1);
 
-    if (strlen (gtk_entry_get_text (GTK_ENTRY (m->srch))) && strcasestr (str, gtk_entry_get_text (GTK_ENTRY (m->srch))) && strcasestr (id, ".desktop")) tmatch = TRUE;
+    if (strlen (gtk_entry_get_text (GTK_ENTRY (m->srch))) && strcasestr (name, gtk_entry_get_text (GTK_ENTRY (m->srch))) && strcasestr (id, ".desktop")) tmatch = TRUE;
 
     if (tmatch && (m->dir == 0 || m->dir == menu)) res = TRUE;
     else if (m->dir != 0 && menu == -1) res = TRUE;
     else if (!strlen (gtk_entry_get_text (GTK_ENTRY (m->srch))) && m->dir == menu) res = TRUE;
 
-    g_free (str);
+    g_free (name);
     g_free (id);
     return res;
 }
@@ -957,7 +970,7 @@ void menu_init (NmenuPlugin *m)
     g_signal_connect (m->plugin, "clicked", G_CALLBACK (menu_button_clicked), m);
 
     /* Set up variables */
-    m->applist = gtk_list_store_new (5, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
+    m->applist = gtk_list_store_new (6, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
     g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);
     m->swin = NULL;
 

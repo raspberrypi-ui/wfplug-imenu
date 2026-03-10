@@ -62,6 +62,7 @@ typedef struct
 {
     char *id;
     char *name;
+    char *label;
     char *comment;
     GdkPixbuf *icon;
     GList *sortorder;
