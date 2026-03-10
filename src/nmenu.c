@@ -792,14 +792,14 @@ static void change_dir (NmenuPlugin *m, char *str)
 static void set_title (NmenuPlugin *m)
 {
     GtkTreeIter iter;
-    char *name, *id;
+    char *name, *id, *str;
     int menu;
     gboolean found;
 
     if (!m->hierarchic) return;
     if (m->dir == 0)
     {
-        gtk_label_set_text (GTK_LABEL (m->title), _("Categories"));
+        gtk_label_set_markup (GTK_LABEL (m->title), _("<b>Categories</b>"));
         return;
     }
 
@@ -812,7 +812,9 @@ static void set_title (NmenuPlugin *m)
             sscanf (id, "%d", &menu);
             if (menu == m->dir)
             {
-                gtk_label_set_text (GTK_LABEL (m->title), name);
+                str = g_strdup_printf ("<b>%s</b>", name);
+                gtk_label_set_markup (GTK_LABEL (m->title), str);
+                g_free (str);
                 g_free (name);
                 g_free (id);
                 return;
