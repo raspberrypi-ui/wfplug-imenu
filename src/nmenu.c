@@ -313,22 +313,33 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
     g_free (buf);
     g_key_file_free (kf);
 
-    if (wp_mode == FM_WP_COLOR) pattern = cairo_pattern_create_rgb (desktop_bg.red, desktop_bg.green, desktop_bg.blue);
+    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), mnum), &geom);
+    dest_w = geom.width;
+    dest_h = geom.height;
+
+    bg = cairo_image_surface_create (CAIRO_FORMAT_RGB24, dest_w, dest_h);
+    cr = cairo_create (bg);
+
+    if (wp_mode == FM_WP_COLOR)
+    {
+        gdk_cairo_set_source_rgba (cr, &desktop_bg);
+        cairo_rectangle (cr, 0, 0, dest_w, dest_h);
+        cairo_fill (cr);
+
+        cairo_rectangle (cr, 0, 0, dest_w, dest_h);
+        cairo_set_source_rgba (cr, m->overlay_col.red, m->overlay_col.green, m->overlay_col.blue, m->overlay_col.alpha);
+        cairo_fill (cr);
+        cairo_destroy (cr);
+    }
     else
     {
-        gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), mnum), &geom);
         pix = gdk_pixbuf_new_from_file (wallpaper, NULL);
         src_w = gdk_pixbuf_get_width (pix);
         src_h = gdk_pixbuf_get_height (pix);
-        dest_w = geom.width;
-        dest_h = geom.height;
         x = wp_mode == FM_WP_SCREEN ? -geom.x : 0;
         y = wp_mode == FM_WP_SCREEN ? -geom.y : 0;
         pixcol = (int)(desktop_bg.alpha * 255) + (((int)(desktop_bg.blue * 255)) << 8)
             + (((int)(desktop_bg.green * 255)) << 16) + (((int)(desktop_bg.red * 255)) << 24);
-
-        bg = cairo_image_surface_create (CAIRO_FORMAT_RGB24, dest_w, dest_h);
-        cr = cairo_create (bg);
 
         if (gdk_pixbuf_get_has_alpha (pix) || wp_mode == FM_WP_CENTER || wp_mode == FM_WP_FIT)
         {
@@ -416,11 +427,10 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
         cairo_rectangle (cr, 0, 0, gdk_pixbuf_get_width (pix), gdk_pixbuf_get_height (pix));
         cairo_set_source_rgba (cr, m->overlay_col.red, m->overlay_col.green, m->overlay_col.blue, m->overlay_col.alpha);
         cairo_fill (cr);
-
         cairo_destroy (cr);
-
-        pattern = cairo_pattern_create_for_surface (bg);
     }
+
+    pattern = cairo_pattern_create_for_surface (bg);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
