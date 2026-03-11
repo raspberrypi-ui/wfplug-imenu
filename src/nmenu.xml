@@ -18,15 +18,15 @@
 	</option>
 	<option name="nmenu_hierarchic" type="bool">
 		<_short>Icon Menu Hierarchic</_short>
-		<default>true</default>
+		<default>false</default>
 	</option>
 	<option name="nmenu_overlay_col" type="string">
 		<_short>Icon Menu Overlay Colour</_short>
-		<default>""</default>
+		<default>light gray</default>
 	</option>
 	<option name="nmenu_overlay_text_col" type="string">
 		<_short>Icon Menu Overlay Text Colour</_short>
-		<default>""</default>
+		<default>black</default>
 	</option>
 	</group>
 	</plugin>
