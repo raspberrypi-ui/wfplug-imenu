@@ -58,8 +58,7 @@ typedef enum
     FM_WP_FIT,
     FM_WP_CENTER,
     FM_WP_TILE,
-    FM_WP_CROP,
-    FM_WP_SCREEN
+    FM_WP_CROP
 }FmWallpaperMode;
 
 /*----------------------------------------------------------------------------*/
@@ -307,7 +306,6 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
             if (!g_strcmp0 (buf, "center")) wp_mode = FM_WP_CENTER;
             if (!g_strcmp0 (buf, "tile")) wp_mode = FM_WP_TILE;
             if (!g_strcmp0 (buf, "crop")) wp_mode = FM_WP_CROP;
-            if (!g_strcmp0 (buf, "screen")) wp_mode = FM_WP_SCREEN;
         }
     }
     g_free (buf);
@@ -320,13 +318,11 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
     bg = cairo_image_surface_create (CAIRO_FORMAT_RGB24, dest_w, dest_h);
     cr = cairo_create (bg);
 
-    if (wp_mode == FM_WP_COLOR)
-    {
-        gdk_cairo_set_source_rgba (cr, &desktop_bg);
-        cairo_rectangle (cr, 0, 0, dest_w, dest_h);
-        cairo_fill (cr);
-    }
-    else
+    gdk_cairo_set_source_rgba (cr, &desktop_bg);
+    cairo_rectangle (cr, 0, 0, dest_w, dest_h);
+    cairo_fill (cr);
+
+    if (wp_mode != FM_WP_COLOR)
     {
         pix = gdk_pixbuf_new_from_file (wallpaper, NULL);
         src_w = gdk_pixbuf_get_width (pix);
@@ -334,19 +330,11 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
         pixcol = (int)(desktop_bg.alpha * 255) + (((int)(desktop_bg.blue * 255)) << 8)
             + (((int)(desktop_bg.green * 255)) << 16) + (((int)(desktop_bg.red * 255)) << 24);
 
-        if (gdk_pixbuf_get_has_alpha (pix) || wp_mode == FM_WP_CENTER || wp_mode == FM_WP_FIT)
-        {
-            gdk_cairo_set_source_rgba (cr, &desktop_bg);
-            cairo_rectangle (cr, 0, 0, dest_w, dest_h);
-            cairo_fill (cr);
-        }
-
         if (dest_w != src_w || dest_h != src_h)
         {
             switch (wp_mode)
             {
                 case FM_WP_STRETCH:
-                case FM_WP_SCREEN:
                     // simple scaling to new size
                     modpix = gdk_pixbuf_scale_simple (pix, dest_w, dest_h, GDK_INTERP_BILINEAR);
                     g_object_unref (pix);
