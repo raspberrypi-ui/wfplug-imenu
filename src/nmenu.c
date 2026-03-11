@@ -267,49 +267,67 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
     GdkRectangle geom;
     FmWallpaperMode wp_mode;
     GdkRGBA desktop_bg;
-    char *fname, *buf, *wallpaper;
+    char *fname, *buf, *wallpaper = NULL;
     GKeyFile *kf;
     GError *err;
 
+    for (w = 0; w < 2; w++)
+    {
+        if (w == 0)
+        {
+            // load sys defaults
+            fname = g_strdup_printf ("desktop-items-%u.conf", mnum);
+            buf = g_build_filename ("/etc/xdg", "pcmanfm", "default", fname, NULL);
+            g_free (fname);
+        }
+        else
+        {
+            // load user config
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    buf = gdk_screen_get_monitor_plug_name (gdk_display_get_default_screen (gdk_display_get_default ()), mnum);
+            buf = gdk_screen_get_monitor_plug_name (gdk_display_get_default_screen (gdk_display_get_default ()), mnum);
 #pragma GCC diagnostic pop
-    fname = g_strdup_printf ("desktop-items-%s.conf", buf);
-    g_free (buf);
-    buf = g_build_filename (g_get_user_config_dir (), "pcmanfm", "default", fname, NULL);
-    g_free (fname);
-
-    // read in data from file to a key file
-    kf = g_key_file_new ();
-    if (g_key_file_load_from_file (kf, buf, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
-    {
-        g_free (buf);
-        // get data from the key file
-        err = NULL;
-        buf = g_key_file_get_string (kf, "*", "desktop_bg", &err);
-        if (err == NULL && buf) gdk_rgba_parse (&desktop_bg, buf);
-        g_free (buf);
-
-        err = NULL;
-        buf = g_key_file_get_string (kf, "*", "wallpaper", &err);
-        if (err == NULL && buf) wallpaper = g_strdup (buf);
-        g_free (buf);
-
-        err = NULL;
-        buf = g_key_file_get_string (kf, "*", "wallpaper_mode", &err);
-        if (err == NULL && buf)
-        {
-            if (!g_strcmp0 (buf, "color")) wp_mode = FM_WP_COLOR;
-            if (!g_strcmp0 (buf, "stretch")) wp_mode = FM_WP_STRETCH;
-            if (!g_strcmp0 (buf, "fit")) wp_mode = FM_WP_FIT;
-            if (!g_strcmp0 (buf, "center")) wp_mode = FM_WP_CENTER;
-            if (!g_strcmp0 (buf, "tile")) wp_mode = FM_WP_TILE;
-            if (!g_strcmp0 (buf, "crop")) wp_mode = FM_WP_CROP;
+            fname = g_strdup_printf ("desktop-items-%s.conf", buf);
+            g_free (buf);
+            buf = g_build_filename (g_get_user_config_dir (), "pcmanfm", "default", fname, NULL);
+            g_free (fname);
         }
+
+        // read in data from file to a key file
+        kf = g_key_file_new ();
+        if (g_key_file_load_from_file (kf, buf, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
+        {
+            g_free (buf);
+            // get data from the key file
+            err = NULL;
+            buf = g_key_file_get_string (kf, "*", "desktop_bg", &err);
+            if (err == NULL && buf) gdk_rgba_parse (&desktop_bg, buf);
+            g_free (buf);
+
+            err = NULL;
+            buf = g_key_file_get_string (kf, "*", "wallpaper", &err);
+            if (err == NULL && buf)
+            {
+                if (wallpaper) g_free (wallpaper);
+                wallpaper = g_strdup (buf);
+            }
+            g_free (buf);
+
+            err = NULL;
+            buf = g_key_file_get_string (kf, "*", "wallpaper_mode", &err);
+            if (err == NULL && buf)
+            {
+                if (!g_strcmp0 (buf, "color")) wp_mode = FM_WP_COLOR;
+                if (!g_strcmp0 (buf, "stretch")) wp_mode = FM_WP_STRETCH;
+                if (!g_strcmp0 (buf, "fit")) wp_mode = FM_WP_FIT;
+                if (!g_strcmp0 (buf, "center")) wp_mode = FM_WP_CENTER;
+                if (!g_strcmp0 (buf, "tile")) wp_mode = FM_WP_TILE;
+                if (!g_strcmp0 (buf, "crop")) wp_mode = FM_WP_CROP;
+            }
+        }
+        g_free (buf);
+        g_key_file_free (kf);
     }
-    g_free (buf);
-    g_key_file_free (kf);
 
     gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), mnum), &geom);
     dest_w = geom.width;
