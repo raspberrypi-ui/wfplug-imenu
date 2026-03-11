@@ -661,12 +661,18 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
                                 g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
                                 return FALSE;
 
-        case GDK_KEY_Right :
-        case GDK_KEY_Down :     gtk_widget_grab_focus (m->stv);
+        case GDK_KEY_Right :    gtk_widget_grab_focus (m->stv);
                                 // propagate the key press event to the icon view. Twice...
                                 g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
                                 g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
                                 return FALSE;
+
+        case GDK_KEY_Down :     gtk_widget_grab_focus (m->stv);
+                                // propagate the key press event to the icon view. Twice...
+                                g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
+                                g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
+                                // stop the text in the search view becoming selected
+                                return TRUE;
 
         default :               return FALSE;
     }
