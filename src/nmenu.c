@@ -261,7 +261,7 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
     cairo_t *cr;
     cairo_surface_t *bg;
     cairo_pattern_t *pattern;
-    GdkPixbuf *pix = NULL, *modpix;
+    GdkPixbuf *pix, *modpix;
     int src_x, src_y, src_w, src_h, dest_x, dest_y, dest_w, dest_h, w, h;
     guint32 pixcol;
     GdkRectangle geom;
@@ -337,8 +337,6 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
                 case FM_WP_STRETCH:
                     // simple scaling to new size
                     modpix = gdk_pixbuf_scale_simple (pix, dest_w, dest_h, GDK_INTERP_BILINEAR);
-                    g_object_unref (pix);
-                    pix = modpix;
                     break;
 
                 case FM_WP_FIT:
@@ -369,9 +367,6 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
                     dest_x = dest_w > src_w ? (dest_w - src_w) / 2 : 0;
                     dest_y = dest_h > src_h ? (dest_h - src_h) / 2 : 0;
                     gdk_pixbuf_copy_area (pix, src_x, src_y, w, h, modpix, dest_x, dest_y);
-
-                    g_object_unref (pix);
-                    pix = modpix;
                     break;
 
                 case FM_WP_TILE:
@@ -393,17 +388,16 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
                         }
                         dest_y += src_h;
                     }
-
-                    g_object_unref (pix);
-                    pix = modpix;
                     break;
 
                 default : break;
             }
         }
 
-        gdk_cairo_set_source_pixbuf (cr, pix, 0, 0);
+        gdk_cairo_set_source_pixbuf (cr, modpix, 0, 0);
         cairo_paint (cr);
+        g_object_unref (pix);
+        g_object_unref (modpix);
     }
 
     cairo_rectangle (cr, 0, 0, dest_w, dest_h);
@@ -420,7 +414,6 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
 
     gdk_window_invalidate_rect (window, NULL, TRUE);
     cairo_pattern_destroy (pattern);
-    if (pix) g_object_unref (pix);
 }
 
 static void destroy_window (NmenuPlugin *m)
