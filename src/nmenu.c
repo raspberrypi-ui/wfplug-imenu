@@ -263,7 +263,7 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
     cairo_surface_t *bg;
     cairo_pattern_t *pattern;
     GdkPixbuf *pix = NULL, *modpix;
-    int src_x, src_y, src_w, src_h, dest_x, dest_y, dest_w, dest_h, x, y, w, h;
+    int src_x, src_y, src_w, src_h, dest_x, dest_y, dest_w, dest_h, w, h;
     guint32 pixcol;
     GdkRectangle geom;
     FmWallpaperMode wp_mode;
@@ -331,8 +331,6 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
         pix = gdk_pixbuf_new_from_file (wallpaper, NULL);
         src_w = gdk_pixbuf_get_width (pix);
         src_h = gdk_pixbuf_get_height (pix);
-        x = wp_mode == FM_WP_SCREEN ? -geom.x : 0;
-        y = wp_mode == FM_WP_SCREEN ? -geom.y : 0;
         pixcol = (int)(desktop_bg.alpha * 255) + (((int)(desktop_bg.blue * 255)) << 8)
             + (((int)(desktop_bg.green * 255)) << 16) + (((int)(desktop_bg.red * 255)) << 24);
 
@@ -416,7 +414,7 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
             }
         }
 
-        gdk_cairo_set_source_pixbuf (cr, pix, x, y);
+        gdk_cairo_set_source_pixbuf (cr, pix, 0, 0);
         cairo_paint (cr);
     }
 
