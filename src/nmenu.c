@@ -325,11 +325,6 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
         gdk_cairo_set_source_rgba (cr, &desktop_bg);
         cairo_rectangle (cr, 0, 0, dest_w, dest_h);
         cairo_fill (cr);
-
-        cairo_rectangle (cr, 0, 0, dest_w, dest_h);
-        cairo_set_source_rgba (cr, m->overlay_col.red, m->overlay_col.green, m->overlay_col.blue, m->overlay_col.alpha);
-        cairo_fill (cr);
-        cairo_destroy (cr);
     }
     else
     {
@@ -423,12 +418,12 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
 
         gdk_cairo_set_source_pixbuf (cr, pix, x, y);
         cairo_paint (cr);
-
-        cairo_rectangle (cr, 0, 0, gdk_pixbuf_get_width (pix), gdk_pixbuf_get_height (pix));
-        cairo_set_source_rgba (cr, m->overlay_col.red, m->overlay_col.green, m->overlay_col.blue, m->overlay_col.alpha);
-        cairo_fill (cr);
-        cairo_destroy (cr);
     }
+
+    cairo_rectangle (cr, 0, 0, dest_w, dest_h);
+    cairo_set_source_rgba (cr, m->overlay_col.red, m->overlay_col.green, m->overlay_col.blue, m->overlay_col.alpha);
+    cairo_fill (cr);
+    cairo_destroy (cr);
 
     pattern = cairo_pattern_create_for_surface (bg);
 
