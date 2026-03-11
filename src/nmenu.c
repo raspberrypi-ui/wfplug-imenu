@@ -418,8 +418,8 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
         g_object_unref (modpix);
     }
 
+    gdk_cairo_set_source_rgba (cr, &(m->overlay_col));
     cairo_rectangle (cr, 0, 0, dest_w, dest_h);
-    cairo_set_source_rgba (cr, m->overlay_col.red, m->overlay_col.green, m->overlay_col.blue, m->overlay_col.alpha);
     cairo_fill (cr);
     cairo_destroy (cr);
 
