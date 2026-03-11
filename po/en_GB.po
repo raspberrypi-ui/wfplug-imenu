@@ -33,6 +33,14 @@ msgstr "Sort Items Alphabetically"
 msgid "Use menu categories"
 msgstr "Use Menu Categories"
 
+#: ../src/nmenu.c:55
+msgid "Overlay colour"
+msgstr "Overlay Colour"
+
+#: ../src/nmenu.c:56
+msgid "Overlay text colour"
+msgstr "Overlay Text Colour"
+
 #: ../src/nmenu.c:429
 msgid "Add to desktop"
 msgstr "Add to Desktop"

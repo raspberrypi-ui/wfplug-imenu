@@ -57,6 +57,8 @@ typedef struct
     GList *sortorder;
     int dir;
     gboolean hierarchic;
+    GdkRGBA overlay_col;
+    GdkRGBA overlay_text_col;
 } NmenuPlugin;
 
 typedef struct
@@ -69,7 +71,7 @@ typedef struct
     GList *sortorder;
 } MenuEntry;
 
-extern conf_table_t conf_table[5];
+extern conf_table_t conf_table[7];
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */

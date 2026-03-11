@@ -66,12 +66,14 @@ typedef enum
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
 
-conf_table_t conf_table[5] = {
-    {CONF_TYPE_INT,  "padding",          N_("Icon horizontal padding"),     NULL},
-    {CONF_TYPE_BOOL, "show_tooltips",    N_("Show tooltips"),               NULL},
-    {CONF_TYPE_BOOL, "alpha_sort",       N_("Sort items alphabetically"),   NULL},
-    {CONF_TYPE_BOOL, "hierarchic",       N_("Use menu categories"),         NULL},
-    {CONF_TYPE_NONE, NULL,               NULL,                              NULL}
+conf_table_t conf_table[7] = {
+    {CONF_TYPE_INT,     "padding",          N_("Icon horizontal padding"),      NULL},
+    {CONF_TYPE_BOOL,    "show_tooltips",    N_("Show tooltips"),                NULL},
+    {CONF_TYPE_BOOL,    "alpha_sort",       N_("Sort items alphabetically"),    NULL},
+    {CONF_TYPE_BOOL,    "hierarchic",       N_("Use menu categories"),          NULL},
+    {CONF_TYPE_COLOUR,  "overlay_col",      N_("Overlay colour"),               NULL},
+    {CONF_TYPE_COLOUR,  "overlay_text_col", N_("Overlay text colour"),          NULL},
+    {CONF_TYPE_NONE,    NULL,               NULL,                               NULL}
 };
 
 /*----------------------------------------------------------------------------*/
@@ -79,7 +81,7 @@ conf_table_t conf_table[5] = {
 /*----------------------------------------------------------------------------*/
 
 static void create_window (NmenuPlugin *m);
-static void load_background (GdkWindow *window, int mnum);
+static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum);
 static void destroy_window (NmenuPlugin *m);
 static void window_destroyed (GtkWidget *, gpointer data);
 static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
@@ -226,7 +228,7 @@ static void create_window (NmenuPlugin *m)
     gtk_widget_show_all (m->swin);
     gtk_widget_set_visible (m->title, m->hierarchic);
     gtk_window_present (GTK_WINDOW (m->swin));
-    load_background (gtk_widget_get_window (m->swin), 0);
+    load_background (m, gtk_widget_get_window (m->swin), 0);
 
     // calculate the size
     gtk_icon_view_get_cell_rect (GTK_ICON_VIEW (m->stv), path, NULL, &cell);
@@ -255,7 +257,7 @@ static void create_window (NmenuPlugin *m)
     g_object_unref (builder);
 }
 
-static void load_background (GdkWindow *window, int mnum)
+static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
 {
     cairo_t *cr;
     cairo_surface_t *bg;
@@ -410,6 +412,11 @@ static void load_background (GdkWindow *window, int mnum)
 
         gdk_cairo_set_source_pixbuf (cr, pix, x, y);
         cairo_paint (cr);
+
+        cairo_rectangle (cr, 0, 0, gdk_pixbuf_get_width (pix), gdk_pixbuf_get_height (pix));
+        cairo_set_source_rgba (cr, m->overlay_col.red, m->overlay_col.green, m->overlay_col.blue, m->overlay_col.alpha);
+        cairo_fill (cr);
+
         cairo_destroy (cr);
 
         pattern = cairo_pattern_create_for_surface (bg);
@@ -661,6 +668,7 @@ static void handle_search_changed (GtkWidget *entry, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
     GtkTreePath *path = gtk_tree_path_new_from_indices (0, -1);
+    char *str;
 
     if (!m->hierarchic && !strlen (gtk_entry_get_text (GTK_ENTRY (entry))))
     {
@@ -673,7 +681,12 @@ static void handle_search_changed (GtkWidget *entry, gpointer user_data)
         gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (m->flist));
         gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), FALSE);
         if (strlen (gtk_entry_get_text (GTK_ENTRY (entry))))
-            gtk_label_set_markup (GTK_LABEL (m->title), _("<b>Search Results</b>"));
+        {
+            str = g_strdup_printf ("<b><span color=\"#%02X%02X%02X\">%s</span></b>", (int) (m->overlay_text_col.red * 255),
+                (int) (m->overlay_text_col.green * 255), (int) (m->overlay_text_col.blue * 255), _("Search Results"));
+            gtk_label_set_markup (GTK_LABEL (m->title), str);
+            g_free (str);
+        }
         else set_title (m);
     }
 
@@ -877,14 +890,18 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
 {
     MenuCacheDir *dir = NULL;
     int count = 0;
-    char *str;
+    char *str, *act;
 
     if (m->applist) gtk_list_store_clear (m->applist);
 
-    str = g_strdup_printf ("%d", 0);
+    act = g_strdup_printf ("%d", 0);
+    str = g_strdup_printf ("<b><span color=\"#%02X%02X%02X\">%s</span></b>", (int) (m->overlay_text_col.red * 255),
+        (int) (m->overlay_text_col.green * 255), (int) (m->overlay_text_col.blue * 255), _("Back"));
+
     gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, "go-previous"),
-        ENTRY_LABEL, _("Back"), ENTRY_NAME, _("Back"), ENTRY_ID, str, ENTRY_MENU, -1, -1);
+        ENTRY_LABEL, str, ENTRY_NAME, _("Back"), ENTRY_ID, act, ENTRY_MENU, -1, -1);
     g_free (str);
+    g_free (act);
 
     while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
     count = load_menu_hierarchic (m, dir, 0);
@@ -987,7 +1004,10 @@ static void set_title (NmenuPlugin *m)
     if (!m->hierarchic) return;
     if (m->dir == 0)
     {
-        gtk_label_set_markup (GTK_LABEL (m->title), _("<b>Categories</b>"));
+        str = g_strdup_printf ("<b><span color=\"#%02X%02X%02X\">%s</span></b>", (int) (m->overlay_text_col.red * 255),
+            (int) (m->overlay_text_col.green * 255), (int) (m->overlay_text_col.blue * 255), _("Categories"));
+        gtk_label_set_markup (GTK_LABEL (m->title), str);
+        g_free (str);
         return;
     }
 
@@ -1000,7 +1020,8 @@ static void set_title (NmenuPlugin *m)
             sscanf (id, "%d", &menu);
             if (menu == m->dir)
             {
-                str = g_strdup_printf ("<b>%s</b>", name);
+                str = g_strdup_printf ("<b><span color=\"#%02X%02X%02X\">%s</span></b>", (int) (m->overlay_text_col.red * 255),
+                    (int) (m->overlay_text_col.green * 255), (int) (m->overlay_text_col.blue * 255), name);
                 gtk_label_set_markup (GTK_LABEL (m->title), str);
                 g_free (str);
                 g_free (name);
@@ -1018,24 +1039,30 @@ static char *ellipsize_lines (NmenuPlugin *m, const char *text)
 {
     PangoContext *context;
     PangoLayout *layout;
-    char *ptr, *trytext = g_strdup (text);
+    char *ptr, *str;
 
     context = gtk_widget_get_pango_context (m->stv);
     layout = pango_layout_new (context);
     pango_layout_set_width (layout, PANGO_SCALE * CELL_WIDTH);
-    pango_layout_set_text (layout, trytext, -1);
+
+    str = g_strdup (text);
+    pango_layout_set_text (layout, str, -1);
     while (pango_layout_get_line_count (layout) > NUM_LINES)
     {
-        ptr = strrchr (trytext, ' ');
-        if (!ptr || ptr - 3 < trytext) break;
+        ptr = strrchr (str, ' ');
+        if (!ptr || ptr - 3 < str) break;
         sprintf (ptr - 3, "...");
-        pango_layout_set_text (layout, trytext, -1);
+        pango_layout_set_text (layout, str, -1);
     }
 
-    ptr = g_markup_escape_text (trytext, -1);
+    ptr = g_markup_escape_text (str, -1);
     g_object_unref (layout);
-    g_free (trytext);
-    return ptr;
+    g_free (str);
+
+    str = g_strdup_printf ("<span color=\"#%02X%02X%02X\">%s</span>", (int) (m->overlay_text_col.red * 255),
+        (int) (m->overlay_text_col.green * 255), (int) (m->overlay_text_col.blue * 255), ptr);
+    g_free (ptr);
+    return str;
 }
 
 /* Sorting */
