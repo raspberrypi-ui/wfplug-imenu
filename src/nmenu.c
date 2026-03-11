@@ -656,10 +656,15 @@ static gboolean handle_search_keypress (GtkWidget *, GdkEventKey *event, gpointe
                                 return TRUE;
 
         case GDK_KEY_Up :
-        case GDK_KEY_Down :
-        case GDK_KEY_Left :
-        case GDK_KEY_Right :    gtk_widget_grab_focus (m->stv);
+        case GDK_KEY_Left :     gtk_widget_grab_focus (m->stv);
                                 // propagate the key press event to the icon view...
+                                g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
+                                return FALSE;
+
+        case GDK_KEY_Right :
+        case GDK_KEY_Down :     gtk_widget_grab_focus (m->stv);
+                                // propagate the key press event to the icon view. Twice...
+                                g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
                                 g_signal_emit_by_name (m->stv, "key-press-event", event, &ret);
                                 return FALSE;
 
