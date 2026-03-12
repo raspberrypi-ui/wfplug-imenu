@@ -360,13 +360,20 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
                 case FM_WP_FIT:
                 case FM_WP_CROP:
                     // create a consistent x-y scaling to fit either the shortest or the longest side to the screen
-                    gdouble w_ratio = (float) dest_w / src_w;
-                    gdouble h_ratio = (float) dest_h / src_h;
-                    gdouble ratio = wp_mode == FM_WP_FIT ? MIN (w_ratio, h_ratio) : MAX (w_ratio, h_ratio);
-                    if (ratio != 1.0)
+                    w = dest_w * src_h;
+                    h = dest_h * src_w;
+                    if (w != h)
                     {
-                        src_w = ratio == w_ratio ? dest_w : src_w * ratio;
-                        src_h = ratio == h_ratio ? dest_h : src_h * ratio;
+                        if ((wp_mode == FM_WP_FIT && w < h) || (wp_mode == FM_WP_CROP && w > h))
+                        {
+                            src_h = (src_h * dest_w) / src_w;
+                            src_w = dest_w;
+                        }
+                        else
+                        {
+                            src_w = (src_w * dest_h) / src_h;
+                            src_h = dest_h;
+                        }
                         modpix = gdk_pixbuf_scale_simple (pix, src_w, src_h, GDK_INTERP_BILINEAR);
                         g_object_unref (pix);
                         pix = modpix;
