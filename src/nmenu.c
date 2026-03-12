@@ -366,12 +366,12 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
                     {
                         if ((wp_mode == FM_WP_FIT && w < h) || (wp_mode == FM_WP_CROP && w > h))
                         {
-                            src_h = (src_h * dest_w) / src_w;
+                            src_h = w / src_w;
                             src_w = dest_w;
                         }
                         else
                         {
-                            src_w = (src_w * dest_h) / src_h;
+                            src_w = h / src_h;
                             src_h = dest_h;
                         }
                         modpix = gdk_pixbuf_scale_simple (pix, src_w, src_h, GDK_INTERP_BILINEAR);
