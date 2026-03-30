@@ -768,11 +768,14 @@ static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data)
     MenuCacheItem *item = menu_cache_find_item_by_id (m->menu_cache, gtk_widget_get_name (mi));
     char *path = g_build_filename (g_get_home_dir (), "Desktop", menu_cache_item_get_file_basename (item), NULL);
     FILE *fp = fopen (path, "wb");
-    fprintf (fp, "[Desktop Entry]\nType=Link\n");
-    fprintf (fp, "Name=%s\n", menu_cache_item_get_name (item));
-    fprintf (fp, "Icon=%s\n", menu_cache_item_get_icon (item));
-    fprintf (fp, "URL=/usr/share/applications/%s\n", menu_cache_item_get_file_basename (item));
-    fclose (fp);
+    if (fp)
+    {
+        fprintf (fp, "[Desktop Entry]\nType=Link\n");
+        fprintf (fp, "Name=%s\n", menu_cache_item_get_name (item));
+        fprintf (fp, "Icon=%s\n", menu_cache_item_get_icon (item));
+        fprintf (fp, "URL=/usr/share/applications/%s\n", menu_cache_item_get_file_basename (item));
+        fclose (fp);
+    }
     g_free (path);
     destroy_window (m);
 }
@@ -1132,12 +1135,12 @@ static void save_sortorder (NmenuPlugin* m)
     while (valid)
     {
         gtk_tree_model_get (GTK_TREE_MODEL (m->applist), &iter, 2, &str, -1);
-        fprintf (fp, "%s\n", str);
+        if (fp) fprintf (fp, "%s\n", str);
         m->sortorder = g_list_prepend (m->sortorder, g_strdup (str));
         valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (m->applist), &iter);
     }
 
-    fclose (fp);
+    if (fp) fclose (fp);
 
     m->sortorder = g_list_reverse (m->sortorder);
     m->alphasort = FALSE;
