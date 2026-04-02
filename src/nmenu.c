@@ -351,8 +351,8 @@ static void preload_background (NmenuPlugin *m, int mnum)
         case FM_WP_STRETCH:
             // simple scaling to new size
             modpix = gdk_pixbuf_scale_simple (pix, dest_w, dest_h, GDK_INTERP_BILINEAR);
-            g_free (pix);
-            pix = modpix);
+            g_object_unref (pix);
+            pix = modpix;
             gdk_pixbuf_composite (pix, m->background, 0, 0, dest_w, dest_h, 0, 0, 1, 1, GDK_INTERP_BILINEAR, 255);
             break;
 
@@ -374,8 +374,8 @@ static void preload_background (NmenuPlugin *m, int mnum)
                     src_h = dest_h;
                 }
                 modpix = gdk_pixbuf_scale_simple (pix, src_w, src_h, GDK_INTERP_BILINEAR);
-                g_free (pix);
-                pix = modpix);
+                g_object_unref (pix);
+                pix = modpix;
             }
             // fallthrough
         case FM_WP_CENTER:
@@ -1210,6 +1210,12 @@ gboolean menu_control_msg (NmenuPlugin *m, const char *cmd)
         return TRUE;
     }
 
+    if (!strncmp (cmd, "bg", 4))
+    {
+        g_object_unref (m->background);
+        preload_background (m, 0);
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -1283,6 +1289,7 @@ void menu_destructor (gpointer user_data)
 
     if (m->migesture) g_object_unref (m->migesture);
 
+    g_object_unref (m->background);
     g_free (m);
 }
 
