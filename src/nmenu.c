@@ -80,6 +80,7 @@ conf_table_t conf_table[7] = {
 /*----------------------------------------------------------------------------*/
 
 static void create_window (NmenuPlugin *m);
+static void preload_background (NmenuPlugin *m, int mnum);
 static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum);
 static void destroy_window (NmenuPlugin *m);
 static void window_destroyed (GtkWidget *, gpointer data);
@@ -256,17 +257,14 @@ static void create_window (NmenuPlugin *m)
     g_object_unref (builder);
 }
 
-static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
+static void preload_background (NmenuPlugin *m, int mnum)
 {
-    cairo_t *cr;
-    cairo_surface_t *bg;
-    cairo_pattern_t *pattern;
     GdkPixbuf *pix, *modpix;
+    GdkRGBA desktop_bg;
+    GdkRectangle geom;
     int src_x, src_y, src_w, src_h, dest_x, dest_y, dest_w, dest_h, w, h;
     guint32 pixcol;
-    GdkRectangle geom;
     FmWallpaperMode wp_mode;
-    GdkRGBA desktop_bg;
     char *fname, *buf, *wallpaper = NULL;
     GKeyFile *kf;
     GError *err;
@@ -333,100 +331,103 @@ static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
     dest_w = geom.width;
     dest_h = geom.height;
 
-    bg = cairo_image_surface_create (CAIRO_FORMAT_RGB24, dest_w, dest_h);
-    cr = cairo_create (bg);
-
-    gdk_cairo_set_source_rgba (cr, &desktop_bg);
-    cairo_rectangle (cr, 0, 0, dest_w, dest_h);
-    cairo_fill (cr);
-
     if (wp_mode != FM_WP_COLOR)
     {
         pix = gdk_pixbuf_new_from_file (wallpaper, NULL);
         src_w = gdk_pixbuf_get_width (pix);
         src_h = gdk_pixbuf_get_height (pix);
-        pixcol = (int)(desktop_bg.alpha * 255) + (((int)(desktop_bg.blue * 255)) << 8)
-            + (((int)(desktop_bg.green * 255)) << 16) + (((int)(desktop_bg.red * 255)) << 24);
-
-        if (dest_w != src_w || dest_h != src_h)
-        {
-            switch (wp_mode)
-            {
-                case FM_WP_STRETCH:
-                    // simple scaling to new size
-                    modpix = gdk_pixbuf_scale_simple (pix, dest_w, dest_h, GDK_INTERP_BILINEAR);
-                    break;
-
-                case FM_WP_FIT:
-                case FM_WP_CROP:
-                    // create a consistent x-y scaling to fit either the shortest or the longest side to the screen
-                    w = dest_w * src_h;
-                    h = dest_h * src_w;
-                    if (w != h)
-                    {
-                        if ((wp_mode == FM_WP_FIT && w < h) || (wp_mode == FM_WP_CROP && w > h))
-                        {
-                            src_h = w / src_w;
-                            src_w = dest_w;
-                        }
-                        else
-                        {
-                            src_w = h / src_h;
-                            src_h = dest_h;
-                        }
-                        modpix = gdk_pixbuf_scale_simple (pix, src_w, src_h, GDK_INTERP_BILINEAR);
-                        g_object_unref (pix);
-                        pix = modpix;
-                    }
-                    // fallthrough
-                case FM_WP_CENTER:
-                    // create a new pixbuf filled with background
-                    modpix = gdk_pixbuf_new (GDK_COLORSPACE_RGB, gdk_pixbuf_get_has_alpha (pix), 8, dest_w, dest_h);
-                    gdk_pixbuf_fill (modpix, pixcol);
-
-                    // calculate how to centre the scaled pixbuf, discarding edges if needed
-                    src_x = src_w > dest_w ? (src_w - dest_w) / 2 : 0;
-                    src_y = src_h > dest_h ? (src_h - dest_h) / 2 : 0;
-                    w = MIN (src_w, dest_w);
-                    h = MIN (src_h, dest_h);
-                    dest_x = dest_w > src_w ? (dest_w - src_w) / 2 : 0;
-                    dest_y = dest_h > src_h ? (dest_h - src_h) / 2 : 0;
-                    gdk_pixbuf_copy_area (pix, src_x, src_y, w, h, modpix, dest_x, dest_y);
-                    break;
-
-                case FM_WP_TILE:
-                    // create a new pixbuf filled with background
-                    modpix = gdk_pixbuf_new (GDK_COLORSPACE_RGB, gdk_pixbuf_get_has_alpha (pix), 8, dest_w, dest_h);
-                    gdk_pixbuf_fill (modpix, pixcol);
-
-                    // loop x and y, copying the source repeatedly into the destination pixbuf
-                    dest_y = 0;
-                    while (dest_y < dest_h)
-                    {
-                        dest_x = 0;
-                        while (dest_x < dest_w)
-                        {
-                            w = dest_x + src_w > dest_w ? dest_w - dest_x : src_w;
-                            h = dest_y + src_h > dest_h ? dest_h - dest_y : src_h;
-                            gdk_pixbuf_copy_area (pix, 0, 0, w, h, modpix, dest_x, dest_y);
-                            dest_x += src_w;
-                        }
-                        dest_y += src_h;
-                    }
-                    break;
-
-                default : break;
-            }
-        }
-
-        gdk_cairo_set_source_pixbuf (cr, modpix, 0, 0);
-        cairo_paint (cr);
-        g_object_unref (pix);
-        g_object_unref (modpix);
     }
+    else pix = NULL;
+
+    pixcol = (int)(desktop_bg.alpha * 255) + (((int)(desktop_bg.blue * 255)) << 8)
+        + (((int)(desktop_bg.green * 255)) << 16) + (((int)(desktop_bg.red * 255)) << 24);
+
+    // create a new pixbuf filled with background
+    m->background = gdk_pixbuf_new (GDK_COLORSPACE_RGB, FALSE, 8, dest_w, dest_h);
+    gdk_pixbuf_fill (m->background, pixcol);
+
+    switch (wp_mode)
+    {
+        case FM_WP_STRETCH:
+            // simple scaling to new size
+            modpix = gdk_pixbuf_scale_simple (pix, dest_w, dest_h, GDK_INTERP_BILINEAR);
+            g_free (pix);
+            pix = modpix);
+            gdk_pixbuf_composite (pix, m->background, 0, 0, dest_w, dest_h, 0, 0, 1, 1, GDK_INTERP_BILINEAR, 255);
+            break;
+
+        case FM_WP_FIT:
+        case FM_WP_CROP:
+            // create a consistent x-y scaling to fit either the shortest or the longest side to the screen
+            w = dest_w * src_h;
+            h = dest_h * src_w;
+            if (w != h)
+            {
+                if ((wp_mode == FM_WP_FIT && w < h) || (wp_mode == FM_WP_CROP && w > h))
+                {
+                    src_h = w / src_w;
+                    src_w = dest_w;
+                }
+                else
+                {
+                    src_w = h / src_h;
+                    src_h = dest_h;
+                }
+                modpix = gdk_pixbuf_scale_simple (pix, src_w, src_h, GDK_INTERP_BILINEAR);
+                g_free (pix);
+                pix = modpix);
+            }
+            // fallthrough
+        case FM_WP_CENTER:
+            // calculate how to centre the scaled pixbuf, discarding edges if needed
+            src_x = src_w > dest_w ? (src_w - dest_w) / 2 : 0;
+            src_y = src_h > dest_h ? (src_h - dest_h) / 2 : 0;
+            w = MIN (src_w, dest_w);
+            h = MIN (src_h, dest_h);
+            dest_x = dest_w > src_w ? (dest_w - src_w) / 2 : 0;
+            dest_y = dest_h > src_h ? (dest_h - src_h) / 2 : 0;
+            gdk_pixbuf_composite (pix, m->background, dest_x, dest_y, w, h, dest_x - src_x, dest_y - src_y, 1, 1, GDK_INTERP_BILINEAR, 255);
+            break;
+
+        case FM_WP_TILE:
+            // loop x and y, copying the source repeatedly into the destination pixbuf
+            dest_y = 0;
+            while (dest_y < dest_h)
+            {
+                dest_x = 0;
+                while (dest_x < dest_w)
+                {
+                    w = dest_x + src_w > dest_w ? dest_w - dest_x : src_w;
+                    h = dest_y + src_h > dest_h ? dest_h - dest_y : src_h;
+                    gdk_pixbuf_composite (pix, m->background, dest_x, dest_y, w, h, dest_x, dest_y, 1, 1, GDK_INTERP_BILINEAR, 255);
+                    dest_x += src_w;
+                }
+                dest_y += src_h;
+            }
+            break;
+
+        default : break;
+    }
+    if (pix) g_object_unref (pix);
+}
+
+static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
+{
+    cairo_t *cr;
+    cairo_surface_t *bg;
+    cairo_pattern_t *pattern;
+    GdkRectangle geom;
+
+    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), mnum), &geom);
+
+    bg = cairo_image_surface_create (CAIRO_FORMAT_RGB24, geom.width, geom.height);
+    cr = cairo_create (bg);
+
+    gdk_cairo_set_source_pixbuf (cr, m->background, 0, 0);
+    cairo_paint (cr);
 
     gdk_cairo_set_source_rgba (cr, &(m->overlay_col));
-    cairo_rectangle (cr, 0, 0, dest_w, dest_h);
+    cairo_rectangle (cr, 0, 0, geom.width, geom.height);
     cairo_fill (cr);
     cairo_destroy (cr);
 
@@ -1263,6 +1264,8 @@ void menu_init (NmenuPlugin *m)
 
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);
+
+    preload_background (m, 0);
 }
 
 void menu_destructor (gpointer user_data)
