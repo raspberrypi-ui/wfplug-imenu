@@ -58,6 +58,7 @@ typedef struct
     GList *sortorder;
     int dir;
     gboolean hierarchic;
+    int napps;
     GdkRGBA overlay_col;
     GdkRGBA overlay_text_col;
 } NmenuPlugin;

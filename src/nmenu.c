@@ -101,6 +101,7 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y);
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data);
 static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer);
 static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data);
+static void handle_reload_menu (MenuCache *, gpointer user_data);
 static int read_menu_cache (NmenuPlugin *m);
 static void free_entry (MenuEntry *ent);
 static int compare_entries (MenuEntry *a, MenuEntry *b);
@@ -135,7 +136,7 @@ static void create_window (NmenuPlugin *m)
     PangoContext *context;
     PangoFontMetrics *metrics;
     PangoFontDescription *font_desc;
-    int x, w, h, nr, nc, ni, xs, ys;
+    int x, w, h, nr, nc, xs, ys;
 
     textdomain (GETTEXT_PACKAGE);
     builder = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/gmenu.ui");
@@ -154,14 +155,12 @@ static void create_window (NmenuPlugin *m)
     /* create the filtered list for the tree view */
     if (m->hierarchic)
     {
-        ni = read_menu_cache_hierarchic (m);
         m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
         gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps_hierarchic, m, NULL);
         gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->flist));
     }
     else
     {
-        ni = read_menu_cache (m);
         m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
         gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
         gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
@@ -242,7 +241,7 @@ static void create_window (NmenuPlugin *m)
         // for each possible number of columns, calculate the window height
         // and compare the resulting window to the aspect ratio of the display
         w = x * cell.width + (x - 1) * xs;
-        nr = (ni + x - 1) / x;
+        nr = (m->napps + x - 1) / x;
         h = nr * cell.height + (nr - 1) * ys;
         if (h <= (w * mon.height) / mon.width) break;
     }
@@ -464,6 +463,7 @@ static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer us
     char *str, *pstr = NULL;
     GtkTreeIter prev = *iter;
 
+    if (!m->swin) return TRUE;
     gtk_tree_model_get (model, iter, 1, &str, -1);
     if (gtk_tree_model_iter_previous (model, &prev)) gtk_tree_model_get (model, &prev, 1, &pstr, -1);
     if ((!pstr || g_strcmp0 (str, pstr)) && strcasestr (str, gtk_entry_get_text (GTK_ENTRY (m->srch)))) res = TRUE;
@@ -798,6 +798,16 @@ static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
 
 /* Load menu from cache */
 
+static void handle_reload_menu (MenuCache *, gpointer user_data)
+{
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
+    printf ("reloading menu cache\n");
+    if (m->hierarchic)
+        m->napps = read_menu_cache_hierarchic (m);
+    else
+        m->napps = read_menu_cache (m);
+}
+
 static int read_menu_cache (NmenuPlugin *m)
 {
     MenuCacheDir *dir = NULL;
@@ -1065,7 +1075,7 @@ static char *ellipsize_lines (NmenuPlugin *m, const char *text)
     PangoLayout *layout;
     char *ptr, *str;
 
-    context = gtk_widget_get_pango_context (m->stv);
+    context = gtk_widget_get_pango_context (m->plugin);
     layout = pango_layout_new (context);
     pango_layout_set_width (layout, PANGO_SCALE * CELL_WIDTH);
 
@@ -1265,8 +1275,7 @@ void menu_init (NmenuPlugin *m)
     m->menu_cache = menu_cache_lookup (need_prefix ? "lxde-applications.menu" : "applications.menu");
     if (m->menu_cache == NULL) g_warning ("Error loading applications menu");
 
-    // we don't need a notification, but if you don't call this, the cache never loads...
-    m->reload_notify = menu_cache_add_reload_notify (m->menu_cache, NULL, NULL);
+    m->reload_notify = menu_cache_add_reload_notify (m->menu_cache, handle_reload_menu, m);
 
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);
