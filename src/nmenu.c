@@ -224,10 +224,10 @@ static void create_window (NmenuPlugin *m)
     gtk_widget_set_events (m->swin, gtk_widget_get_events (m->swin) | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
     g_signal_connect (m->swin, "button-release-event", G_CALLBACK (handle_clickaway), m);
 
-    gtk_widget_show_all (m->swin);
+    gtk_widget_show_all (m->swin);  // 30ms
+    load_background (m, gtk_widget_get_window (m->swin), 0);    // 40ms
     gtk_widget_set_visible (m->title, m->hierarchic);
     gtk_window_present (GTK_WINDOW (m->swin));
-    load_background (m, gtk_widget_get_window (m->swin), 0);
 
     // calculate the size
     gtk_icon_view_get_cell_rect (GTK_ICON_VIEW (m->stv), path, NULL, &cell);
@@ -801,7 +801,7 @@ static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
 static void handle_reload_menu (MenuCache *, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
-    printf ("reloading menu cache\n");
+
     if (m->hierarchic)
         m->napps = read_menu_cache_hierarchic (m);
     else
