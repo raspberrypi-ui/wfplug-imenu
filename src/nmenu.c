@@ -79,9 +79,10 @@ conf_table_t conf_table[7] = {
 /* Prototypes                                                                 */
 /*----------------------------------------------------------------------------*/
 
+static GdkMonitor *get_monitor (NmenuPlugin *m);
 static void create_window (NmenuPlugin *m);
-static void preload_background (NmenuPlugin *m, int mnum);
-static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum);
+static void preload_background (NmenuPlugin *m);
+static void load_background (NmenuPlugin *m, GdkWindow *window);
 static void destroy_window (NmenuPlugin *m);
 static void window_destroyed (GtkWidget *, gpointer data);
 static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
@@ -121,6 +122,12 @@ static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 /* Function definitions                                                       */
 /*----------------------------------------------------------------------------*/
 
+static GdkMonitor *get_monitor (NmenuPlugin *m)
+{
+    GtkWindow *panel = find_panel (m->plugin);
+    return gtk_layer_get_monitor (panel);
+}
+
 /* Icon window */
 
 static void create_window (NmenuPlugin *m)
@@ -131,6 +138,7 @@ static void create_window (NmenuPlugin *m)
     GtkCellLayout *layout;
     GtkGesture *gesture;
     GdkRectangle mon, cell;
+    GdkMonitor *monitor;
     GtkStyleContext *style_context;
     GtkStateFlags state;
     PangoContext *context;
@@ -210,11 +218,12 @@ static void create_window (NmenuPlugin *m)
     pressed = FALSE;
 
     /* realise */
-    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), 0), &mon);
+    monitor = get_monitor (m);
+    gdk_monitor_get_geometry (monitor, &mon);
     gtk_window_set_default_size (GTK_WINDOW (m->swin), mon.width, mon.height);
     gtk_layer_init_for_window (GTK_WINDOW (m->swin));
     gtk_layer_set_layer (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_LAYER_TOP);
-    gtk_layer_set_monitor (GTK_WINDOW (m->swin), gdk_display_get_monitor (gdk_display_get_default (), 0));
+    gtk_layer_set_monitor (GTK_WINDOW (m->swin), monitor);
     gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
     gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
     gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
@@ -225,7 +234,7 @@ static void create_window (NmenuPlugin *m)
     g_signal_connect (m->swin, "button-release-event", G_CALLBACK (handle_clickaway), m);
 
     gtk_widget_show_all (m->swin);  // 30ms
-    load_background (m, gtk_widget_get_window (m->swin), 0);    // 40ms
+    load_background (m, gtk_widget_get_window (m->swin));    // 40ms
     gtk_widget_set_visible (m->title, m->hierarchic);
     gtk_window_present (GTK_WINDOW (m->swin));
 
@@ -256,17 +265,27 @@ static void create_window (NmenuPlugin *m)
     g_object_unref (builder);
 }
 
-static void preload_background (NmenuPlugin *m, int mnum)
+static void preload_background (NmenuPlugin *m)
 {
     GdkPixbuf *pix, *modpix;
     GdkRGBA desktop_bg;
     GdkRectangle geom;
-    int src_x, src_y, src_w, src_h, dest_x, dest_y, dest_w, dest_h, w, h;
+    GdkMonitor *mon;
+    GdkDisplay *disp;
+    int src_x, src_y, src_w, src_h, dest_x, dest_y, dest_w, dest_h, w, h, mnum;
     guint32 pixcol;
     FmWallpaperMode wp_mode;
     char *fname, *buf, *wallpaper = NULL;
     GKeyFile *kf;
     GError *err;
+
+    // find the monitor number
+    disp = gdk_display_get_default ();
+    mon = get_monitor (m);
+    for (mnum = 0; mnum < gdk_display_get_n_monitors (disp); mnum++)
+    {
+        if (gdk_display_get_monitor (disp, mnum) == mon) break;
+    }
 
     for (w = 0; w < 2; w++)
     {
@@ -282,7 +301,7 @@ static void preload_background (NmenuPlugin *m, int mnum)
             // load user config
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-            buf = gdk_screen_get_monitor_plug_name (gdk_display_get_default_screen (gdk_display_get_default ()), mnum);
+            buf = gdk_screen_get_monitor_plug_name (gdk_display_get_default_screen (disp), mnum);
 #pragma GCC diagnostic pop
             fname = g_strdup_printf ("desktop-items-%s.conf", buf);
             g_free (buf);
@@ -326,7 +345,7 @@ static void preload_background (NmenuPlugin *m, int mnum)
         g_key_file_free (kf);
     }
 
-    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), mnum), &geom);
+    gdk_monitor_get_geometry (get_monitor (m), &geom);
     dest_w = geom.width;
     dest_h = geom.height;
 
@@ -410,14 +429,14 @@ static void preload_background (NmenuPlugin *m, int mnum)
     if (pix) g_object_unref (pix);
 }
 
-static void load_background (NmenuPlugin *m, GdkWindow *window, int mnum)
+static void load_background (NmenuPlugin *m, GdkWindow *window)
 {
     cairo_t *cr;
     cairo_surface_t *bg;
     cairo_pattern_t *pattern;
     GdkRectangle geom;
 
-    gdk_monitor_get_geometry (gdk_display_get_monitor (gdk_display_get_default (), mnum), &geom);
+    gdk_monitor_get_geometry (get_monitor (m), &geom);
 
     bg = cairo_image_surface_create (CAIRO_FORMAT_RGB24, geom.width, geom.height);
     cr = cairo_create (bg);
@@ -1224,7 +1243,7 @@ gboolean menu_control_msg (NmenuPlugin *m, const char *cmd)
     if (!strncmp (cmd, "bg", 4))
     {
         g_object_unref (m->background);
-        preload_background (m, 0);
+        preload_background (m);
         return TRUE;
     }
     return FALSE;
@@ -1281,7 +1300,7 @@ void menu_init (NmenuPlugin *m)
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);
 
-    preload_background (m, 0);
+    preload_background (m);
 }
 
 void menu_destructor (gpointer user_data)
