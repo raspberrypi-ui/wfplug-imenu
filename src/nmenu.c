@@ -550,7 +550,8 @@ static gboolean handle_iconview_buttonrel (GtkWidget *, GdkEventButton *event, g
                 destroy_window (m);
             }
             else change_dir (m, str);
-        }
+        } else destroy_window (m);
+
         return TRUE;
     }
     return FALSE;
