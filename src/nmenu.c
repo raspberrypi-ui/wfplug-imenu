@@ -265,6 +265,52 @@ static void create_window (NmenuPlugin *m)
     g_object_unref (builder);
 }
 
+static int get_panel_offset (int mnum)
+{
+    char *user_config_file, *mname = NULL, *pmon = NULL;
+    int isize;
+    GKeyFile *kf;
+    GdkDisplay *disp = gdk_display_get_default ();
+
+    // if there's only one monitor, it doesn't matter...
+    if (gdk_display_get_n_monitors (disp) < 2) return 0;
+
+    // find which monitor and panel size is being used
+    user_config_file = g_build_filename (g_get_user_config_dir (), "wf-panel-pi.ini", NULL);
+    kf = g_key_file_new ();
+    g_key_file_load_from_file (kf, user_config_file, G_KEY_FILE_NONE, NULL);
+    g_free (user_config_file);
+
+    pmon = g_key_file_get_string (kf, "panel", "monitor", NULL);
+    isize = g_key_file_get_integer (kf, "panel", "icon_size", NULL);
+    if (isize <= 0) isize = 32;
+
+    g_key_file_free (kf);
+
+    if (!pmon)
+    {
+        // monitor not set in panel config file - panel will be on mon 0
+        if (mnum == 0) isize += 4;
+        else isize = 0;
+    }
+    else
+    {
+        // find the monitor name for this desktop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        mname = gdk_screen_get_monitor_plug_name (gdk_display_get_default_screen (disp), mnum);
+#pragma GCC diagnostic pop
+
+        // compare against the monitor name set in the panel config
+        if (!g_strcmp0 (mname, pmon)) isize += 4;
+        else isize = 0;
+
+        g_free (mname);
+        g_free (pmon);
+    }
+    return isize;
+}
+
 static void preload_background (NmenuPlugin *m)
 {
     GdkPixbuf *pix, *modpix;
@@ -347,7 +393,7 @@ static void preload_background (NmenuPlugin *m)
 
     gdk_monitor_get_geometry (get_monitor (m), &geom);
     dest_w = geom.width;
-    dest_h = geom.height;
+    dest_h = geom.height - get_panel_offset (mnum);  // lose this....???!!!!!
 
     if (wp_mode != FM_WP_COLOR)
     {
