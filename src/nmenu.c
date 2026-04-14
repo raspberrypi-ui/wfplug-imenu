@@ -102,7 +102,6 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y);
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data);
 static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer);
 static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data);
-static void handle_reload_menu (MenuCache *, gpointer user_data);
 static int read_menu_cache (NmenuPlugin *m);
 static void free_entry (MenuEntry *ent);
 static int compare_entries (MenuEntry *a, MenuEntry *b);
@@ -820,7 +819,7 @@ static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
 
 /* Load menu from cache */
 
-static void handle_reload_menu (MenuCache *, gpointer user_data)
+void handle_reload_menu (MenuCache *, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
 
@@ -1298,7 +1297,6 @@ void menu_init (NmenuPlugin *m)
     if (m->menu_cache == NULL) g_warning ("Error loading applications menu");
 
     m->reload_notify = menu_cache_add_reload_notify (m->menu_cache, handle_reload_menu, m);
-    handle_reload_menu (NULL, m);
 
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);

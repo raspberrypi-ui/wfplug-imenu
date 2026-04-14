@@ -56,6 +56,7 @@ void WayfireNmenu::settings_changed_cb (void)
     menu_set_padding (m);
     if (m->alphasort) clear_sortorder (m);
     gtk_widget_set_tooltip_text (m->img, m->tooltips ? _("Click here to open applications menu") : NULL);
+    handle_reload_menu (NULL, m);
 }
 
 void WayfireNmenu::command (const char *cmd)

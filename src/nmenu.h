@@ -83,6 +83,7 @@ extern void menu_init (NmenuPlugin *m);
 extern void menu_update_display (NmenuPlugin *m);
 extern void menu_set_padding (NmenuPlugin *m);
 extern void clear_sortorder (NmenuPlugin *m);
+extern void handle_reload_menu (MenuCache *, gpointer user_data);
 extern gboolean menu_control_msg (NmenuPlugin *m, const char *cmd);
 extern void menu_destructor (gpointer user_data);
 
