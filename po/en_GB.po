@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-05 10:52+0000\n"
+"POT-Creation-Date: 2026-04-14 13:05+0100\n"
 "PO-Revision-Date: 2025-05-23 10:36+0100\n"
 "Last-Translator: Simon Long <simon@raspberrypi.com>\n"
 "Language-Team: English (British)\n"
@@ -17,43 +17,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/nmenu.c:51
+#: ../src/nmenu.c:69
 msgid "Icon horizontal padding"
 msgstr "Icon Horizontal Padding"
 
-#: ../src/nmenu.c:52
+#: ../src/nmenu.c:70
 msgid "Show tooltips"
 msgstr "Show Tooltips"
 
-#: ../src/nmenu.c:53
+#: ../src/nmenu.c:71
 msgid "Sort items alphabetically"
 msgstr "Sort Items Alphabetically"
 
-#: ../src/nmenu.c:54
+#: ../src/nmenu.c:72
 msgid "Use menu categories"
 msgstr "Use Menu Categories"
 
-#: ../src/nmenu.c:55
+#: ../src/nmenu.c:73
 msgid "Overlay colour"
 msgstr "Overlay Colour"
 
-#: ../src/nmenu.c:56
+#: ../src/nmenu.c:74
 msgid "Overlay text colour"
 msgstr "Overlay Text Colour"
 
-#: ../src/nmenu.c:429
+#: ../src/nmenu.c:727
+msgid "Search Results"
+msgstr "Search Results"
+
+#: ../src/nmenu.c:763
 msgid "Add to desktop"
 msgstr "Add to Desktop"
 
-#: ../src/nmenu.c:434
+#: ../src/nmenu.c:768
 msgid "Add to Launcher"
 msgstr "Add to Launcher"
 
-#: ../src/nmenu.c:442
+#: ../src/nmenu.c:776
 msgid "Properties"
 msgstr "Properties"
 
-#: ../src/nmenu.c:740 ../src/nmenu.cpp:53
+#: ../src/nmenu.c:953 ../src/nmenu.c:956
+msgid "Back"
+msgstr "Back"
+
+#: ../src/nmenu.c:1062
+msgid "Categories"
+msgstr "Categories"
+
+#: ../src/nmenu.c:1280 ../src/nmenu.cpp:58
 msgid "Click here to open applications menu"
 msgstr "Click here to open applications menu"
 
