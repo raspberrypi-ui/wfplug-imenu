@@ -1,7 +1,7 @@
 # English translations for plugin package.
-# Copyright (C) 2025 Raspberry Pi
+# Copyright (C) 2026 Raspberry Pi
 # This file is distributed under the same license as the wf-panel-pi package.
-# Simon Long <simon@raspberrypi.com>, 2025.
+# Simon Long <simon@raspberrypi.com>, 2026.
 #
 msgid ""
 msgstr ""
@@ -15,7 +15,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../src/nmenu.c:69
 msgid "Icon horizontal padding"
