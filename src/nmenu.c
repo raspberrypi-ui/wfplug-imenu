@@ -1298,6 +1298,7 @@ void menu_init (NmenuPlugin *m)
     if (m->menu_cache == NULL) g_warning ("Error loading applications menu");
 
     m->reload_notify = menu_cache_add_reload_notify (m->menu_cache, handle_reload_menu, m);
+    handle_reload_menu (NULL, m);
 
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);
