@@ -244,6 +244,7 @@ static void create_window (NmenuPlugin *m)
     ys = gtk_icon_view_get_column_spacing (GTK_ICON_VIEW (m->stv));
 
     // find the largest number of columns that will fit...
+    w = 0;  // fix warning
     nc = mon.width / cell.width;
     for (x = 1; x <= nc; x++)
     {
@@ -287,6 +288,7 @@ static void preload_background (NmenuPlugin *m)
         if (gdk_display_get_monitor (disp, mnum) == mon) break;
     }
 
+    wp_mode = FM_WP_COLOR;  // fix warning
     for (w = 0; w < 2; w++)
     {
         if (w == 0)
