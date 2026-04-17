@@ -223,6 +223,7 @@ static void create_window (NmenuPlugin *m)
     gtk_layer_init_for_window (GTK_WINDOW (m->swin));
     gtk_layer_set_layer (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_LAYER_TOP);
     gtk_layer_set_monitor (GTK_WINDOW (m->swin), monitor);
+    gtk_layer_set_exclusive_zone (GTK_WINDOW (m->swin), -1);
     gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
     gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
     gtk_layer_set_anchor (GTK_WINDOW (m->swin), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
