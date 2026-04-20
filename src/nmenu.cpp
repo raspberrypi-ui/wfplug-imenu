@@ -66,6 +66,7 @@ void WayfireNmenu::command (const char *cmd)
 
 bool WayfireNmenu::set_icon (void)
 {
+    handle_reload_menu (NULL, m);
     menu_update_display (m);
     return false;
 }
