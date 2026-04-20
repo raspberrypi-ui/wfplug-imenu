@@ -246,7 +246,7 @@ static void create_window (NmenuPlugin *m)
     // find the largest number of columns that will fit...
     w = 0;  // fix warning
     nc = mon.width / cell.width;
-    for (x = 1; x <= nc; x++)
+    for (x = 1; x <= nc - 1; x++)
     {
         // for each possible number of columns, calculate the window height
         // and compare the resulting window to the aspect ratio of the display
