@@ -1230,6 +1230,8 @@ void menu_update_display (NmenuPlugin *m)
     if (m->img) gtk_widget_set_size_request (m->img, wrap_icon_size (m) + 2 * m->padding, -1);
 
     if (m->swin && gtk_widget_is_visible (m->swin)) destroy_window (m);
+
+    preload_background (m);
 }
 
 /* Handler for control message */
