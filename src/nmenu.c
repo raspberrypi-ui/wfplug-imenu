@@ -279,6 +279,22 @@ static void preload_background (NmenuPlugin *m)
     char *fname, *buf, *wallpaper = NULL;
     GKeyFile *kf;
     GError *err;
+    gboolean common = FALSE;
+
+    // get common desktop setting
+    for (w = 0; w < 2; w++)
+    {
+        fname = g_build_filename (w == 0 ? "/etc/xdg" : g_get_user_config_dir (), "pcmanfm", "default", "pcmanfm.conf", NULL);
+        kf = g_key_file_new ();
+        if (g_key_file_load_from_file (kf, fname, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
+        {
+            err = NULL;
+            mnum = g_key_file_get_integer (kf, "ui", "common_bg", &err);
+            if (err == NULL) common = mnum;
+            g_key_file_free (kf);
+        }
+        g_free (fname);
+    }
 
     // find the monitor number
     disp = gdk_display_get_default ();
@@ -294,8 +310,8 @@ static void preload_background (NmenuPlugin *m)
         if (w == 0)
         {
             // load sys defaults
-            fname = g_strdup_printf ("desktop-items-%u.conf", mnum);
-            buf = g_build_filename ("/etc/xdg", "pcmanfm", "default", fname, NULL);
+            fname = g_strdup_printf ("desktop-items-%u.conf", common ? 0 : mnum);
+            buf = g_build_filename ("/etc", "xdg", "pcmanfm", "default", fname, NULL);
             g_free (fname);
         }
         else
@@ -305,7 +321,7 @@ static void preload_background (NmenuPlugin *m)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             buf = gdk_screen_get_monitor_plug_name (gdk_display_get_default_screen (disp), mnum);
 #pragma GCC diagnostic pop
-            fname = g_strdup_printf ("desktop-items-%s.conf", buf);
+            fname = g_strdup_printf ("desktop-items-%s.conf", common ? "0" : buf);
             g_free (buf);
             buf = g_build_filename (g_get_user_config_dir (), "pcmanfm", "default", fname, NULL);
             g_free (fname);
