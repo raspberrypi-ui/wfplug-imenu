@@ -778,10 +778,13 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y)
 
     menu = gtk_menu_new ();
 
-    item = gtk_menu_item_new_with_label (_("Add to desktop"));
-    gtk_widget_set_name (item, id);
-    g_signal_connect (item, "activate", G_CALLBACK (handle_menu_item_add_to_desktop), m);
-    gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+    if (system ("pgrep swaybg > /dev/null"))
+    {
+        item = gtk_menu_item_new_with_label (_("Add to desktop"));
+        gtk_widget_set_name (item, id);
+        g_signal_connect (item, "activate", G_CALLBACK (handle_menu_item_add_to_desktop), m);
+        gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+    }
 
     item = gtk_menu_item_new_with_label (_("Add to Launcher"));
     gtk_widget_set_name (item, id);
