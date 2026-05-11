@@ -48,7 +48,6 @@ extern void show_properties_dialog (MenuCacheItem *item);
 #define ENTRY_LABEL     4
 #define ENTRY_MENU      5
 
-#define CELL_WIDTH  120
 #define NUM_LINES   2
 
 typedef enum
@@ -198,8 +197,8 @@ static void create_window (NmenuPlugin *m)
 
     trend = gtk_cell_renderer_text_new ();
     gtk_cell_renderer_set_alignment (trend, 0.5, 0.0);
-    gtk_cell_renderer_set_fixed_size (trend, CELL_WIDTH, NUM_LINES * PANGO_PIXELS (h));
-    g_object_set (trend, "wrap-width", CELL_WIDTH, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
+    gtk_cell_renderer_set_fixed_size (trend, h / 192, NUM_LINES * PANGO_PIXELS (h));
+    g_object_set (trend, "wrap-width", h / 192, "wrap-mode", PANGO_WRAP_WORD, "alignment", PANGO_ALIGN_CENTER, NULL);
     gtk_cell_layout_pack_start (layout, trend, FALSE);
     gtk_cell_layout_add_attribute (layout, trend, "markup", ENTRY_LABEL);
 
@@ -1114,11 +1113,21 @@ static char *ellipsize_lines (NmenuPlugin *m, const char *text)
 {
     PangoContext *context;
     PangoLayout *layout;
+    PangoFontMetrics *metrics;
+    PangoFontDescription *font_desc;
     char *ptr, *str;
+    int h;
 
     context = gtk_widget_get_pango_context (m->plugin);
+    gtk_style_context_get (gtk_widget_get_style_context (m->plugin), gtk_widget_get_state_flags (m->plugin),
+        "font", &font_desc, NULL);
+    metrics = pango_context_get_metrics (context, font_desc, pango_context_get_language (context));
+    h = pango_font_metrics_get_ascent (metrics) + pango_font_metrics_get_descent (metrics);
+    pango_font_metrics_unref (metrics);
+    pango_font_description_free (font_desc);
+
     layout = pango_layout_new (context);
-    pango_layout_set_width (layout, PANGO_SCALE * CELL_WIDTH);
+    pango_layout_set_width (layout, PANGO_SCALE * h / 192);
 
     str = g_strdup (text);
     pango_layout_set_text (layout, str, -1);
