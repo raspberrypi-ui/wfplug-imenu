@@ -65,8 +65,8 @@ msgid "Categories"
 msgstr "Categories"
 
 #: ../src/nmenu.c:1280 ../src/nmenu.cpp:58
-msgid "Click here to open applications menu"
-msgstr "Click here to open applications menu"
+msgid "Application Launcher"
+msgstr "Application Launcher"
 
 #: ../src/nmenu.h:32
 msgid "Icon Menu"
