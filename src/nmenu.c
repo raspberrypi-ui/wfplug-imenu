@@ -64,14 +64,15 @@ typedef enum
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
 
-conf_table_t conf_table[7] = {
-    {CONF_TYPE_INT,     "padding",          N_("Icon horizontal padding"),      NULL},
-    {CONF_TYPE_BOOL,    "show_tooltips",    N_("Show tooltips"),                NULL},
-    {CONF_TYPE_BOOL,    "alpha_sort",       N_("Sort items alphabetically"),    NULL},
-    {CONF_TYPE_BOOL,    "hierarchic",       N_("Use menu categories"),          NULL},
-    {CONF_TYPE_COLOUR,  "overlay_col",      N_("Overlay colour"),               NULL},
-    {CONF_TYPE_COLOUR,  "overlay_text_col", N_("Overlay text colour"),          NULL},
-    {CONF_TYPE_NONE,    NULL,               NULL,                               NULL}
+conf_table_t conf_table[8] = {
+    {CONF_TYPE_INT,     "padding",          N_("Icon horizontal padding"),          NULL},
+    {CONF_TYPE_BOOL,    "show_tooltips",    N_("Show tooltips"),                    NULL},
+    {CONF_TYPE_BOOL,    "alpha_sort",       N_("Sort items alphabetically"),        NULL},
+    {CONF_TYPE_BOOL,    "hierarchic",       N_("Use menu categories"),              NULL},
+    {CONF_TYPE_BOOL,    "comp_icons",       N_("Show composite category icons"),    NULL},
+    {CONF_TYPE_COLOUR,  "overlay_col",      N_("Overlay colour"),                   NULL},
+    {CONF_TYPE_COLOUR,  "overlay_text_col", N_("Overlay text colour"),              NULL},
+    {CONF_TYPE_NONE,    NULL,               NULL,                                   NULL}
 };
 
 /*----------------------------------------------------------------------------*/
@@ -106,7 +107,7 @@ static void free_entry (MenuEntry *ent);
 static int compare_entries (MenuEntry *a, MenuEntry *b);
 static void load_menu (NmenuPlugin* m, MenuCacheDir* dir);
 static int read_menu_cache_hierarchic (NmenuPlugin *m);
-static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, char **list);
+static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, char **list, GdkPixbuf **icon);
 static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
 static void change_dir (NmenuPlugin *m, char *str);
 static void set_title (NmenuPlugin *m);
@@ -978,21 +979,24 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
     g_free (act);
 
     while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
-    count = load_menu_hierarchic (m, dir, 0, NULL);
+    count = load_menu_hierarchic (m, dir, 0, NULL, NULL);
     menu_cache_item_unref (MENU_CACHE_ITEM (dir));
 
     return count;
 }
 
-static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, char **list)
+static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, char **list, GdkPixbuf **icon)
 {
     GSList *l, *children;
     MenuCacheItem *item;
     MenuCacheType type;
-    int count = 0, max = 0, this = menu, res;
+    int count = 0, max = 0, this = menu, res, dim;
     char *name, *str, *title, *apptt;
+    GdkPixbuf *cpb;
 
     if (!menu_cache_dir_is_visible (dir)) return 0;
+
+    dim = gtk_widget_get_scale_factor (m->plugin) * get_icon_size (m->plugin) / 2;
 
     children = menu_cache_dir_list_children (dir);
 
@@ -1009,12 +1013,16 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
         {
             case MENU_CACHE_TYPE_DIR :  menu++;
                                         apptt = NULL;
-                                        res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu, &apptt) + 1;
+                                        if (m->comp_icons)
+                                            cpb = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, dim * 2, dim * 2);
+                                        else
+                                            cpb = load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item));
+                                        res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu, &apptt, m->comp_icons ? &cpb : NULL) + 1;
                                         if (res > 1)
                                         {
                                             title = g_strdup_printf ("<b>%s</b>", name);
                                             str = g_strdup_printf ("%d", menu);
-                                            gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
+                                            gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, cpb,
                                                 ENTRY_LABEL, title, ENTRY_ID, str, ENTRY_COMMENT, apptt,
                                                 ENTRY_NAME, menu_cache_item_get_name (item), ENTRY_MENU, this, -1);
                                             g_free (title);
@@ -1023,6 +1031,7 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
                                             count++;
                                             if (res > max) max = res;
                                         }
+                                        g_object_unref (cpb);
                                         break;
 
             case MENU_CACHE_TYPE_APP :  if (!menu_cache_app_get_is_visible (MENU_CACHE_APP (item), SHOW_IN_LXDE)) continue;
@@ -1039,6 +1048,17 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
                                                 g_free (str);
                                             }
                                             else *list = g_strdup (name);
+                                        }
+
+                                        if (icon)
+                                        {
+                                            if (count < 4)
+                                            {
+                                                cpb = load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item));
+                                                gdk_pixbuf_composite (cpb, *icon, count % 2 == 0 ? 0 : dim, count < 2 ? 0 : dim, dim, dim,
+                                                    count % 2 == 0 ? 0 : dim, count < 2 ? 0 : dim, 0.5, 0.5, GDK_INTERP_BILINEAR, 255);
+                                                g_object_unref (cpb);
+                                            }
                                         }
                                         count++;
                                         break;
@@ -1059,6 +1079,8 @@ static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, 
     gboolean res = FALSE, tmatch = FALSE;
     char *name, *id;
     int menu;
+
+    if (!m->swin) return TRUE;
 
     gtk_tree_model_get (model, iter, ENTRY_NAME, &name, ENTRY_ID, &id, ENTRY_MENU, &menu, -1);
 

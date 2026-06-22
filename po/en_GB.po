@@ -32,6 +32,10 @@ msgstr "Sort Items Alphabetically"
 msgid "Use menu categories"
 msgstr "Use Menu Categories"
 
+#: ../src/nmenu.c:72
+msgid "Show composite category icons"
+msgstr "Show Composite Category Icons"
+
 #: ../src/nmenu.c:73
 msgid "Overlay colour"
 msgstr "Overlay Colour"

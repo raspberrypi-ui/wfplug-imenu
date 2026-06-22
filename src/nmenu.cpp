@@ -44,6 +44,7 @@ void WayfireNmenu::read_settings (void)
     m->tooltips = show_tooltips;
     m->alphasort = alphasort;
     m->hierarchic = hierarchic;
+    m->comp_icons = comp_icons;
     if (!gdk_rgba_parse (&m->overlay_col, ((std::string) overlay_col).c_str()))
         gdk_rgba_parse (&m->overlay_col, "dark gray");
     if (!gdk_rgba_parse (&m->overlay_text_col, ((std::string) overlay_text_col).c_str()))
@@ -95,6 +96,7 @@ void WayfireNmenu::init (Gtk::HBox *container)
     show_tooltips.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
     alphasort.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
     hierarchic.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
+    comp_icons.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
     overlay_col.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
     overlay_text_col.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
 }

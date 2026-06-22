@@ -58,6 +58,7 @@ typedef struct
     GList *sortorder;
     int dir;
     gboolean hierarchic;
+    gboolean comp_icons;
     int napps;
     GdkRGBA overlay_col;
     GdkRGBA overlay_text_col;
@@ -73,7 +74,7 @@ typedef struct
     GList *sortorder;
 } MenuEntry;
 
-extern conf_table_t conf_table[7];
+extern conf_table_t conf_table[8];
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */

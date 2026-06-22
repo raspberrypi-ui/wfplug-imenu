@@ -20,6 +20,10 @@
 		<_short>Icon Menu Hierarchic</_short>
 		<default>false</default>
 	</option>
+	<option name="nmenu_comp_icons" type="bool">
+		<_short>Icon Menu Composite Icons</_short>
+		<default>false</default>
+	</option>
 	<option name="nmenu_overlay_col" type="string">
 		<_short>Icon Menu Overlay Colour</_short>
 		<default>rgba(0,0,0,0)</default>

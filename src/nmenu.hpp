@@ -49,6 +49,7 @@ class WayfireNmenu : public WayfireWidget
     WfOption <bool> show_tooltips {"panel/nmenu_show_tooltips"};
     WfOption <bool> alphasort {"panel/nmenu_alpha_sort"};
     WfOption <bool> hierarchic {"panel/nmenu_hierarchic"};
+    WfOption <bool> comp_icons {"panel/nmenu_comp_icons"};
     WfOption <std::string> overlay_col {"panel/nmenu_overlay_col"};
     WfOption <std::string> overlay_text_col {"panel/nmenu_overlay_text_col"};
 
