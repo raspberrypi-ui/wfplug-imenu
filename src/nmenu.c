@@ -106,7 +106,7 @@ static void free_entry (MenuEntry *ent);
 static int compare_entries (MenuEntry *a, MenuEntry *b);
 static void load_menu (NmenuPlugin* m, MenuCacheDir* dir);
 static int read_menu_cache_hierarchic (NmenuPlugin *m);
-static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu);
+static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, char **list);
 static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
 static void change_dir (NmenuPlugin *m, char *str);
 static void set_title (NmenuPlugin *m);
@@ -978,19 +978,19 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
     g_free (act);
 
     while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
-    count = load_menu_hierarchic (m, dir, 0);
+    count = load_menu_hierarchic (m, dir, 0, NULL);
     menu_cache_item_unref (MENU_CACHE_ITEM (dir));
 
     return count;
 }
 
-static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
+static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, char **list)
 {
     GSList *l, *children;
     MenuCacheItem *item;
     MenuCacheType type;
     int count = 0, max = 0, this = menu, res;
-    char *name, *str, *title;
+    char *name, *str, *title, *apptt;
 
     if (!menu_cache_dir_is_visible (dir)) return 0;
 
@@ -1008,16 +1008,18 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
         switch (menu_cache_item_get_type (item))
         {
             case MENU_CACHE_TYPE_DIR :  menu++;
-                                        res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu) + 1;
+                                        apptt = NULL;
+                                        res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu, &apptt) + 1;
                                         if (res > 1)
                                         {
                                             title = g_strdup_printf ("<b>%s</b>", name);
                                             str = g_strdup_printf ("%d", menu);
                                             gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
-                                                ENTRY_LABEL, title, ENTRY_ID, str, ENTRY_COMMENT, menu_cache_item_get_comment (item),
+                                                ENTRY_LABEL, title, ENTRY_ID, str, ENTRY_COMMENT, apptt,
                                                 ENTRY_NAME, menu_cache_item_get_name (item), ENTRY_MENU, this, -1);
                                             g_free (title);
                                             g_free (str);
+                                            g_free (apptt);
                                             count++;
                                             if (res > max) max = res;
                                         }
@@ -1027,6 +1029,17 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu)
                                         gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)),
                                             ENTRY_LABEL, name, ENTRY_ID, menu_cache_item_get_id (item), ENTRY_COMMENT, menu_cache_item_get_comment (item),
                                             ENTRY_NAME, menu_cache_item_get_name (item), ENTRY_MENU, this, -1);
+                                        if (list)
+                                        {
+                                            if (*list)
+                                            {
+                                                str = g_strdup (*list);
+                                                g_free (*list);
+                                                *list = g_strdup_printf ("%s\n%s", str, name);
+                                                g_free (str);
+                                            }
+                                            else *list = g_strdup (name);
+                                        }
                                         count++;
                                         break;
 
