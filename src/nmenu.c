@@ -1029,6 +1029,11 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
                                             tot = -res;
                                             g_settings_set_int (gs, sid, tot);
                                         }
+                                        else if (res < abs (tot))
+                                        {
+                                            tot = res * (tot / abs (tot));
+                                            g_settings_set_int (gs, sid, tot);
+                                        }
                                         if (tot < 0)
                                         {
                                             new = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/new.png", NULL);
