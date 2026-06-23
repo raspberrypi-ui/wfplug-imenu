@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+  <schema path="/org/rpi/wfplug-imenu/" id="org.rpi.wfplug-imenu">
+    <key name="audiovideo" type="i">
+      <default>0</default>
+      <summary>AudioVideo total</summary>
+      <description>
+        Total number of entries in the AudioVideo category in menu cache
+      </description>
+    </key>
+    <key name="development" type="i">
+      <default>0</default>
+      <summary>Development total</summary>
+      <description>
+        Total number of entries in the Development category in menu cache
+      </description>
+    </key>
+    <key name="education" type="i">
+      <default>0</default>
+      <summary>Education total</summary>
+      <description>
+        Total number of entries in the Education category in menu cache
+      </description>
+    </key>
+    <key name="game" type="i">
+      <default>0</default>
+      <summary>Game total</summary>
+      <description>
+        Total number of entries in the Game category in menu cache
+      </description>
+    </key>
+    <key name="graphics" type="i">
+      <default>0</default>
+      <summary>Graphics total</summary>
+      <description>
+        Total number of entries in the Graphics category in menu cache
+      </description>
+    </key>
+    <key name="network" type="i">
+      <default>0</default>
+      <summary>Network total</summary>
+      <description>
+        Total number of entries in the Network category in menu cache
+      </description>
+    </key>
+    <key name="office" type="i">
+      <default>0</default>
+      <summary>Office total</summary>
+      <description>
+        Total number of entries in the Office category in menu cache
+      </description>
+    </key>
+    <key name="science" type="i">
+      <default>0</default>
+      <summary>Science total</summary>
+      <description>
+        Total number of entries in the Science category in menu cache
+      </description>
+    </key>
+    <key name="settings" type="i">
+      <default>0</default>
+      <summary>Settings total</summary>
+      <description>
+        Total number of entries in the Settings category in menu cache
+      </description>
+    </key>
+    <key name="system" type="i">
+      <default>0</default>
+      <summary>System total</summary>
+      <description>
+        Total number of entries in the System category in menu cache
+      </description>
+    </key>
+    <key name="utility" type="i">
+      <default>0</default>
+      <summary>Utility total</summary>
+      <description>
+        Total number of entries in the Utility category in menu cache
+      </description>
+    </key>
+    <key name="help" type="i">
+      <default>0</default>
+      <summary>Help total</summary>
+      <description>
+        Total number of entries in the Help category in menu cache
+      </description>
+    </key>
+  </schema>
+</schemalist>

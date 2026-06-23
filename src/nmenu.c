@@ -990,9 +990,10 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
     GSList *l, *children;
     MenuCacheItem *item;
     MenuCacheType type;
-    int count = 0, max = 0, this = menu, res, dim;
-    char *name, *str, *title, *apptt;
-    GdkPixbuf *cpb;
+    int count = 0, max = 0, this = menu, res, dim, tot;
+    char *name, *str, *title, *apptt, *sid;
+    GdkPixbuf *cpb, *new;
+    GSettings *gs;
 
     if (!menu_cache_dir_is_visible (dir)) return 0;
 
@@ -1016,15 +1017,35 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
                                         if (m->comp_icons)
                                             cpb = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, dim * 2, dim * 2);
                                         else
-                                            cpb = load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item));
+                                            cpb = gdk_pixbuf_copy (load_taskbar_pixbuf (m->plugin, menu_cache_item_get_icon (item)));
+
                                         res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu, &apptt, m->comp_icons ? &cpb : NULL) + 1;
+
+                                        gs = g_settings_new ("org.rpi.wfplug-imenu");
+                                        sid = g_ascii_strdown (menu_cache_item_get_id (item), -1);
+                                        tot = g_settings_get_int (gs, sid);
+                                        if (res > abs (tot))
+                                        {
+                                            tot = -res;
+                                            g_settings_set_int (gs, sid, tot);
+                                        }
+                                        if (tot < 0)
+                                        {
+                                            new = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/new.png", NULL);
+                                            gdk_pixbuf_composite (new, cpb, dim, 0, dim, dim, dim, 0, (double) dim / (double) gdk_pixbuf_get_width (new),
+                                                (double) dim / (double) gdk_pixbuf_get_width (new), GDK_INTERP_BILINEAR, 255);
+                                            g_object_unref (new);
+                                        }
+                                        g_free (sid);
+                                        g_object_unref (gs);
+
                                         if (res > 1)
                                         {
                                             title = g_strdup_printf ("<b>%s</b>", name);
                                             str = g_strdup_printf ("%d", menu);
                                             gtk_list_store_insert_with_values (m->applist, NULL, -1, ENTRY_ICON, cpb,
                                                 ENTRY_LABEL, title, ENTRY_ID, str, ENTRY_COMMENT, apptt,
-                                                ENTRY_NAME, menu_cache_item_get_name (item), ENTRY_MENU, this, -1);
+                                                ENTRY_NAME, menu_cache_item_get_id (item), ENTRY_MENU, this, -1);
                                             g_free (title);
                                             g_free (str);
                                             g_free (apptt);
@@ -1106,9 +1127,10 @@ static void change_dir (NmenuPlugin *m, char *str)
 static void set_title (NmenuPlugin *m)
 {
     GtkTreeIter iter;
-    char *name, *id, *str;
-    int menu;
+    char *name, *id, *str, *dir, *sid;
+    int menu, tot;
     gboolean found;
+    GSettings *gs;
 
     if (!m->hierarchic) return;
     if (m->dir == 0)
@@ -1123,7 +1145,7 @@ static void set_title (NmenuPlugin *m)
     found = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (m->applist), &iter);
     while (found)
     {
-        gtk_tree_model_get (GTK_TREE_MODEL (m->applist), &iter, ENTRY_NAME, &name, ENTRY_ID, &id, -1);
+        gtk_tree_model_get (GTK_TREE_MODEL (m->applist), &iter, ENTRY_LABEL, &name, ENTRY_ID, &id, ENTRY_NAME, &dir, -1);
         if (!strstr (id, ".desktop"))
         {
             sscanf (id, "%d", &menu);
@@ -1132,9 +1154,22 @@ static void set_title (NmenuPlugin *m)
                 str = g_strdup_printf ("<b><span color=\"#%02X%02X%02X\">%s</span></b>", (int) (m->overlay_text_col.red * 255),
                     (int) (m->overlay_text_col.green * 255), (int) (m->overlay_text_col.blue * 255), name);
                 gtk_label_set_markup (GTK_LABEL (m->title), str);
+
+                gs = g_settings_new ("org.rpi.wfplug-imenu");
+                sid = g_ascii_strdown (dir, -1);
+                tot = g_settings_get_int (gs, sid);
+                if (tot < 0)
+                {
+                    g_settings_set_int (gs, sid, -tot);
+                    read_menu_cache_hierarchic (m);
+                }
+                g_free (sid);
+                g_object_unref (gs);
+
                 g_free (str);
                 g_free (name);
                 g_free (id);
+                g_free (dir);
                 return;
             }
         }
