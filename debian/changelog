@@ -1,3 +1,9 @@
+wfplug-imenu (0.3) trixie; urgency=medium
+
+  * Show new indicators on menu categories where appropriate
+
+ -- Simon Long <simon@raspberrypi.com>  Wed, 24 Jun 2026 08:40:55 +0100
+
 wfplug-imenu (0.2) trixie; urgency=medium
 
   * Add composite icon view and tooltip with app list
