@@ -1039,7 +1039,7 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
                                         {
                                             tot = res;
                                             g_settings_set_int (gs, sid, tot);
-                                        }                                            
+                                        }       
                                         else if (res > abs (tot))
                                         {
                                             tot = -res;
