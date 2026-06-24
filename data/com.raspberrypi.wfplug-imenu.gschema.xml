@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
-  <schema path="/org/rpi/wfplug-imenu/" id="org.rpi.wfplug-imenu">
+  <schema path="/com/raspberrypi/wfplug-imenu/" id="com.raspberrypi.wfplug-imenu">
     <key name="audiovideo" type="i">
-      <default>0</default>
+      <default>999</default>
       <summary>AudioVideo total</summary>
       <description>
         Total number of entries in the AudioVideo category in menu cache

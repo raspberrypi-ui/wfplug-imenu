@@ -60,6 +60,8 @@ typedef enum
     FM_WP_CROP
 }FmWallpaperMode;
 
+#define SCHEMA "com.raspberrypi.wfplug-imenu"
+
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
@@ -994,10 +996,19 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
     char *name, *str, *title, *apptt, *sid;
     GdkPixbuf *cpb, *new;
     GSettings *gs;
+    gboolean init = FALSE;
 
     if (!menu_cache_dir_is_visible (dir)) return 0;
 
     dim = gtk_widget_get_scale_factor (m->plugin) * get_icon_size (m->plugin) / 2;
+
+    gs = g_settings_new (SCHEMA);
+    if (g_settings_get_int (gs, "audiovideo") == 999)
+    {
+        init = TRUE;
+        g_settings_set_int (gs, "audiovideo", 0);
+    }
+    g_object_unref (gs);
 
     children = menu_cache_dir_list_children (dir);
 
@@ -1021,10 +1032,15 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
 
                                         res = load_menu_hierarchic (m, MENU_CACHE_DIR (item), menu, &apptt, m->comp_icons ? &cpb : NULL) + 1;
 
-                                        gs = g_settings_new ("org.rpi.wfplug-imenu");
+                                        gs = g_settings_new (SCHEMA);
                                         sid = g_ascii_strdown (menu_cache_item_get_id (item), -1);
                                         tot = g_settings_get_int (gs, sid);
-                                        if (res > abs (tot))
+                                        if (init)
+                                        {
+                                            tot = res;
+                                            g_settings_set_int (gs, sid, tot);
+                                        }                                            
+                                        else if (res > abs (tot))
                                         {
                                             tot = -res;
                                             g_settings_set_int (gs, sid, tot);
@@ -1160,7 +1176,7 @@ static void set_title (NmenuPlugin *m)
                     (int) (m->overlay_text_col.green * 255), (int) (m->overlay_text_col.blue * 255), name);
                 gtk_label_set_markup (GTK_LABEL (m->title), str);
 
-                gs = g_settings_new ("org.rpi.wfplug-imenu");
+                gs = g_settings_new (SCHEMA);
                 sid = g_ascii_strdown (dir, -1);
                 tot = g_settings_get_int (gs, sid);
                 if (tot < 0)
