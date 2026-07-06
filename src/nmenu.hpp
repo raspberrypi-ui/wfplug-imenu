@@ -45,13 +45,13 @@ class WayfireNmenu : public WayfireWidget
 
     sigc::connection icon_timer;
 
-    WfOption <int> padding {"panel/nmenu_padding"};
-    WfOption <bool> show_tooltips {"panel/nmenu_show_tooltips"};
-    WfOption <bool> alphasort {"panel/nmenu_alpha_sort"};
-    WfOption <bool> hierarchic {"panel/nmenu_hierarchic"};
-    WfOption <bool> comp_icons {"panel/nmenu_comp_icons"};
-    WfOption <std::string> overlay_col {"panel/nmenu_overlay_col"};
-    WfOption <std::string> overlay_text_col {"panel/nmenu_overlay_text_col"};
+    WfOption <int> padding {"nmenu/padding"};
+    WfOption <bool> show_tooltips {"nmenu/show_tooltips"};
+    WfOption <bool> alphasort {"nmenu/alpha_sort"};
+    WfOption <bool> hierarchic {"nmenu/hierarchic"};
+    WfOption <bool> comp_icons {"nmenu/comp_icons"};
+    WfOption <std::string> overlay_col {"nmenu/overlay_col"};
+    WfOption <std::string> overlay_text_col {"nmenu/overlay_text_col"};
 
     /* plugin */
     NmenuPlugin *m;

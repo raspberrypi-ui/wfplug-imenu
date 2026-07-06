@@ -1,37 +1,28 @@
 <?xml version="1.0"?>
 <wf-panel-pi>
-	<plugin name="panel">
-	<_short>Panel</_short>
+  <plugin name="nmenu">
 	<group>
-	<_short>Searchable Menu</_short>
-	<option name="nmenu_padding" type="int">
-		<_short>Icon Horizontal Padding</_short>
+	  <option name="padding" type="int">
 		<default>6</default>
-	</option>
-	<option name="nmenu_show_tooltips" type="bool">
-		<_short>Icon Menu Show Tooltips</_short>
+	  </option>
+	  <option name="show_tooltips" type="bool">
 		<default>false</default>
-	</option>
-	<option name="nmenu_alpha_sort" type="bool">
-		<_short>Icon Menu Sort Alphabetically</_short>
+	  </option>
+	  <option name="alpha_sort" type="bool">
 		<default>true</default>
-	</option>
-	<option name="nmenu_hierarchic" type="bool">
-		<_short>Icon Menu Hierarchic</_short>
+	  </option>
+	  <option name="hierarchic" type="bool">
 		<default>false</default>
-	</option>
-	<option name="nmenu_comp_icons" type="bool">
-		<_short>Icon Menu Composite Icons</_short>
+	  </option>
+	  <option name="comp_icons" type="bool">
 		<default>false</default>
-	</option>
-	<option name="nmenu_overlay_col" type="string">
-		<_short>Icon Menu Overlay Colour</_short>
+	  </option>
+	  <option name="overlay_col" type="string">
 		<default>rgba(0,0,0,0)</default>
-	</option>
-	<option name="nmenu_overlay_text_col" type="string">
-		<_short>Icon Menu Overlay Text Colour</_short>
+	  </option>
+	  <option name="overlay_text_col" type="string">
 		<default>rgb(0,0,0)</default>
-	</option>
+	  </option>
 	</group>
-	</plugin>
+  </plugin>
 </wf-panel-pi>
