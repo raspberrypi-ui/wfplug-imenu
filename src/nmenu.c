@@ -1349,7 +1349,7 @@ void menu_init (NmenuPlugin *m)
     /* Set up button */
     gtk_button_set_relief (GTK_BUTTON (m->plugin), GTK_RELIEF_NONE);
     g_signal_connect (m->plugin, "clicked", G_CALLBACK (menu_button_clicked), m);
-    add_long_press (m->plugin, NULL, NULL);
+    m->gesture = add_long_press (m->plugin, NULL, NULL);
 
     /* Set up variables */
     m->applist = gtk_list_store_new (6, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
@@ -1384,6 +1384,7 @@ void menu_destructor (gpointer user_data)
         // unref'ing the menu cache causes a segfault because its io thread isn't being closed...
     }
 
+    if (m->gesture) g_object_unref (m->gesture);
     if (m->migesture) g_object_unref (m->migesture);
 
     g_object_unref (m->background);

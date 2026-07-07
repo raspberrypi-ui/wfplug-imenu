@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 typedef struct 
 {
     GtkWidget *plugin;
+    GtkGesture *gesture;
     GtkGesture *migesture;
     GtkWidget *img;                 /* Taskbar icon */
     GtkWidget *swin;                /* Search window popup */
