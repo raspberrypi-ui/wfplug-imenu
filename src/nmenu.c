@@ -1266,7 +1266,7 @@ static void set_alphasort (gboolean state)
     filename = g_build_filename (g_get_user_config_dir (), "wf-panel-pi", "wf-panel-pi.ini", NULL);
     kf = g_key_file_new ();
     g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL);
-    g_key_file_set_boolean (kf, "panel", "nmenu_alpha_sort", state);
+    g_key_file_set_boolean (kf, "nmenu", "alpha_sort", state);
     str = g_key_file_to_data (kf, &len, NULL);
     g_file_set_contents (filename, str, len, NULL);
     g_free (str);
