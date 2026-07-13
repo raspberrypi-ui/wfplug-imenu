@@ -29,15 +29,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "nmenu.hpp"
 
 extern "C" {
-    WayfireWidget *create () { return new WayfireNmenu; }
-    void destroy (WayfireWidget *w) { delete w; }
+    PanelWidget *create () { return new WidgetNmenu; }
+    void destroy (PanelWidget *w) { delete w; }
 
     const conf_table_t *config_params (void) { return conf_table; };
     const char *display_name (void) { return PLUGIN_TITLE; };
     const char *package_name (void) { return GETTEXT_PACKAGE; };
 }
 
-void WayfireNmenu::read_settings (void)
+void WidgetNmenu::read_settings (void)
 {
     m->padding = padding;
     m->tooltips = show_tooltips;
@@ -50,7 +50,7 @@ void WayfireNmenu::read_settings (void)
         gdk_rgba_parse (&m->overlay_text_col, "light gray");
 }
 
-void WayfireNmenu::settings_changed_cb (void)
+void WidgetNmenu::settings_changed_cb (void)
 {
     read_settings ();
     menu_set_padding (m);
@@ -59,19 +59,19 @@ void WayfireNmenu::settings_changed_cb (void)
     handle_reload_menu (NULL, m);
 }
 
-void WayfireNmenu::command (const char *cmd)
+void WidgetNmenu::command (const char *cmd)
 {
     menu_control_msg (m, cmd);
 }
 
-bool WayfireNmenu::set_icon (void)
+bool WidgetNmenu::set_icon (void)
 {
     handle_reload_menu (NULL, m);
     menu_update_display (m);
     return false;
 }
 
-void WayfireNmenu::init (Gtk::HBox *container)
+void WidgetNmenu::init (Gtk::HBox *container)
 {
     /* Create the button */
     plugin = std::make_unique <Gtk::Button> ();
@@ -81,23 +81,23 @@ void WayfireNmenu::init (Gtk::HBox *container)
     /* Setup structure */
     m = g_new0 (NmenuPlugin, 1);
     m->plugin = (GtkWidget *)((*plugin).gobj());
-    icon_timer = Glib::signal_idle().connect (sigc::mem_fun (*this, &WayfireNmenu::set_icon));
+    icon_timer = Glib::signal_idle().connect (sigc::mem_fun (*this, &WidgetNmenu::set_icon));
 
     /* Initialise the plugin */
     read_settings ();
     menu_init (m);
 
     /* Setup callbacks */
-    padding.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
-    show_tooltips.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
-    alphasort.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
-    hierarchic.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
-    comp_icons.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
-    overlay_col.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
-    overlay_text_col.set_callback (sigc::mem_fun (*this, &WayfireNmenu::settings_changed_cb));
+    padding.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
+    show_tooltips.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
+    alphasort.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
+    hierarchic.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
+    comp_icons.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
+    overlay_col.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
+    overlay_text_col.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
 }
 
-WayfireNmenu::~WayfireNmenu()
+WidgetNmenu::~WidgetNmenu()
 {
     icon_timer.disconnect ();
     menu_destructor (m);

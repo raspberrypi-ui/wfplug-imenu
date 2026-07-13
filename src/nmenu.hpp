@@ -37,7 +37,7 @@ extern "C" {
 #include "nmenu.h"
 }
 
-class WayfireNmenu : public WayfireWidget
+class WidgetNmenu : public PanelWidget
 {
     std::unique_ptr <Gtk::Button> plugin;
 
@@ -58,7 +58,7 @@ class WayfireNmenu : public WayfireWidget
 
     void init (Gtk::HBox *container) override;
     void command (const char *cmd) override;
-    virtual ~WayfireNmenu ();
+    virtual ~WidgetNmenu ();
     bool set_icon (void);
     void read_settings (void);
     void settings_changed_cb (void);
