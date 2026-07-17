@@ -301,6 +301,7 @@ static void preload_background (NmenuPlugin *m)
     // find the monitor number
     disp = gdk_display_get_default ();
     mon = get_monitor (m);
+    if (!mon) return;
     for (mnum = 0; mnum < gdk_display_get_n_monitors (disp); mnum++)
     {
         if (gdk_display_get_monitor (disp, mnum) == mon) break;
@@ -365,7 +366,7 @@ static void preload_background (NmenuPlugin *m)
         g_key_file_free (kf);
     }
 
-    gdk_monitor_get_geometry (get_monitor (m), &geom);
+    gdk_monitor_get_geometry (mon, &geom);
     dest_w = geom.width;
     dest_h = geom.height;
 
