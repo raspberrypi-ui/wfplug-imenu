@@ -67,14 +67,14 @@ typedef enum
 /*----------------------------------------------------------------------------*/
 
 conf_table_t conf_table[8] = {
-    {CONF_TYPE_INT,     "padding",          N_("Icon horizontal padding"),          NULL},
-    {CONF_TYPE_BOOL,    "show_tooltips",    N_("Show tooltips"),                    NULL},
-    {CONF_TYPE_BOOL,    "alpha_sort",       N_("Sort items alphabetically"),        NULL},
-    {CONF_TYPE_BOOL,    "hierarchic",       N_("Use menu categories"),              NULL},
-    {CONF_TYPE_BOOL,    "comp_icons",       N_("Show composite category icons"),    NULL},
-    {CONF_TYPE_COLOUR,  "overlay_col",      N_("Overlay colour"),                   NULL},
-    {CONF_TYPE_COLOUR,  "overlay_text_col", N_("Overlay text colour"),              NULL},
-    {CONF_TYPE_NONE,    NULL,               NULL,                                   NULL}
+    {CONF_TYPE_INT,     "padding",          N_("Icon horizontal padding"),          NULL, "6"               },
+    {CONF_TYPE_BOOL,    "show_tooltips",    N_("Show tooltips"),                    NULL, "false"           },
+    {CONF_TYPE_BOOL,    "alpha_sort",       N_("Sort items alphabetically"),        NULL, "true"            },
+    {CONF_TYPE_BOOL,    "hierarchic",       N_("Use menu categories"),              NULL, "false"           },
+    {CONF_TYPE_BOOL,    "comp_icons",       N_("Show composite category icons"),    NULL, "false"           },
+    {CONF_TYPE_COLOUR,  "overlay_col",      N_("Overlay colour"),                   NULL, "rgba(0,0,0,0)"   },
+    {CONF_TYPE_COLOUR,  "overlay_text_col", N_("Overlay text colour"),              NULL, "rgb(0,0,0)"      },
+    {CONF_TYPE_NONE,    NULL,               NULL,                                   NULL,  NULL             }
 };
 
 /*----------------------------------------------------------------------------*/
@@ -1296,8 +1296,11 @@ static void save_sortorder (NmenuPlugin* m)
     if (fp) fclose (fp);
 
     m->sortorder = g_list_reverse (m->sortorder);
-    m->alphasort = FALSE;
-    set_alphasort (m->alphasort);
+    if (m->alphasort)
+    {
+        m->alphasort = FALSE;
+        set_alphasort (m->alphasort);
+    }
 }
 
 void clear_sortorder (NmenuPlugin *m)
@@ -1410,7 +1413,7 @@ void menu_init (NmenuPlugin *m)
 
     /* Set up variables */
     m->applist = gtk_list_store_new (6, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
-    g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);
+    g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);    //!!!!! Why is this getting called repeatedly??????
     m->swin = NULL;
 
     /* Load the sort list */

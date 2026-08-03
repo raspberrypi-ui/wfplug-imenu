@@ -22,8 +22,3 @@ shared_module('lib' + meson.project_name(), wsources,
         cpp_args : wargs,
         name_prefix: ''
 )
-
-metadata = files(
-  'nmenu.xml'
-)
-install_data(metadata, install_dir: metadata_dir)

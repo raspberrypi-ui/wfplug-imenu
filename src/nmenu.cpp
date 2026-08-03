@@ -39,20 +39,21 @@ extern "C" {
 
 void WidgetNmenu::read_settings (void)
 {
-    m->padding = padding;
-    m->tooltips = show_tooltips;
-    m->alphasort = alphasort;
-    m->hierarchic = hierarchic;
-    m->comp_icons = comp_icons;
-    if (!gdk_rgba_parse (&m->overlay_col, ((std::string) overlay_col).c_str()))
-        gdk_rgba_parse (&m->overlay_col, "dark gray");
-    if (!gdk_rgba_parse (&m->overlay_text_col, ((std::string) overlay_text_col).c_str()))
-        gdk_rgba_parse (&m->overlay_text_col, "light gray");
+    conf_table[0].value = (void *) &m->padding;
+    conf_table[1].value = (void *) &m->tooltips;
+    conf_table[2].value = (void *) &m->alphasort;
+    conf_table[3].value = (void *) &m->hierarchic;
+    conf_table[4].value = (void *) &m->comp_icons;
+    conf_table[5].value = (void *) &m->overlay_col;
+    conf_table[6].value = (void *) &m->overlay_text_col;
+
+    load_configuration_data (PLUGIN_NAME, conf_table);
 }
 
-void WidgetNmenu::settings_changed_cb (void)
+void WidgetNmenu::handle_config_reload (void)
 {
-    read_settings ();
+    load_configuration_data (PLUGIN_NAME, conf_table);
+
     menu_set_padding (m);
     if (m->alphasort) clear_sortorder (m);
     gtk_widget_set_tooltip_text (m->img, m->tooltips ? _("Click here to open applications menu") : NULL);
@@ -86,15 +87,6 @@ void WidgetNmenu::init (Gtk::HBox *container)
     /* Initialise the plugin */
     read_settings ();
     menu_init (m);
-
-    /* Setup callbacks */
-    padding.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
-    show_tooltips.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
-    alphasort.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
-    hierarchic.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
-    comp_icons.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
-    overlay_col.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
-    overlay_text_col.set_callback (sigc::mem_fun (*this, &WidgetNmenu::settings_changed_cb));
 }
 
 WidgetNmenu::~WidgetNmenu()

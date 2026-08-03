@@ -43,14 +43,6 @@ class WidgetNmenu : public PanelWidget
 
     sigc::connection icon_timer;
 
-    WfOption <int> padding {"nmenu/padding"};
-    WfOption <bool> show_tooltips {"nmenu/show_tooltips"};
-    WfOption <bool> alphasort {"nmenu/alpha_sort"};
-    WfOption <bool> hierarchic {"nmenu/hierarchic"};
-    WfOption <bool> comp_icons {"nmenu/comp_icons"};
-    WfOption <std::string> overlay_col {"nmenu/overlay_col"};
-    WfOption <std::string> overlay_text_col {"nmenu/overlay_text_col"};
-
     /* plugin */
     NmenuPlugin *m;
 
@@ -61,7 +53,7 @@ class WidgetNmenu : public PanelWidget
     virtual ~WidgetNmenu ();
     bool set_icon (void);
     void read_settings (void);
-    void settings_changed_cb (void);
+    void handle_config_reload (void);
 };
 
 #endif /* end of include guard: WIDGETS_NMENU_HPP */
