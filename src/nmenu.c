@@ -167,12 +167,14 @@ static void create_window (NmenuPlugin *m)
         m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
         gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps_hierarchic, m, NULL);
         gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->flist));
+        gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), FALSE);
     }
     else
     {
         m->flist = GTK_TREE_MODEL_FILTER (gtk_tree_model_filter_new (GTK_TREE_MODEL (m->applist), NULL));
         gtk_tree_model_filter_set_visible_func (m->flist, (GtkTreeModelFilterVisibleFunc) filter_apps, m, NULL);
         gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), GTK_TREE_MODEL (m->applist));
+        gtk_icon_view_set_reorderable (GTK_ICON_VIEW (m->stv), TRUE);
     }
     if (m->tooltips) gtk_icon_view_set_tooltip_column (GTK_ICON_VIEW (m->stv), ENTRY_COMMENT);
     set_title (m);
@@ -970,6 +972,7 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
     int count = 0;
     char *str, *act;
 
+    g_signal_handlers_block_by_func (m->applist, G_CALLBACK (handle_drag_and_drop_done), m);
     if (m->applist) gtk_list_store_clear (m->applist);
 
     act = g_strdup_printf ("%d", 0);
@@ -984,6 +987,7 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
     while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
     count = load_menu_hierarchic (m, dir, 0, NULL, NULL);
     menu_cache_item_unref (MENU_CACHE_ITEM (dir));
+    g_signal_handlers_unblock_by_func (m->applist, G_CALLBACK (handle_drag_and_drop_done), m);
 
     return count;
 }
@@ -1350,11 +1354,26 @@ static void menu_button_clicked (GtkWidget *, NmenuPlugin *m)
 void menu_update_display (NmenuPlugin *m)
 {
     wrap_set_taskbar_icon (m, m->img, "start-here");
-    if (m->img) gtk_widget_set_size_request (m->img, wrap_icon_size (m) + 2 * m->padding, -1);
+    if (m->img)
+    {
+        gtk_widget_set_size_request (m->img, wrap_icon_size (m) + 2 * m->padding, -1);
+        gtk_widget_set_tooltip_text (m->img, m->tooltips ? _("Click here to open applications menu") : NULL);
+    }
 
     if (m->swin && gtk_widget_is_visible (m->swin)) destroy_window (m);
 
     preload_background (m);
+}
+
+void menu_set_values (NmenuPlugin *m)
+{
+    conf_table[0].value = (void *) &m->padding;
+    conf_table[1].value = (void *) &m->tooltips;
+    conf_table[2].value = (void *) &m->alphasort;
+    conf_table[3].value = (void *) &m->hierarchic;
+    conf_table[4].value = (void *) &m->comp_icons;
+    conf_table[5].value = (void *) &m->overlay_col;
+    conf_table[6].value = (void *) &m->overlay_text_col;
 }
 
 /* Handler for control message */
@@ -1374,12 +1393,6 @@ gboolean menu_control_msg (NmenuPlugin *m, const char *cmd)
         return TRUE;
     }
     return FALSE;
-}
-
-/* Handler for padding update from variable watcher */
-void menu_set_padding (NmenuPlugin *m)
-{
-    gtk_widget_set_size_request (m->img, wrap_icon_size (m) + 2 * m->padding, -1);
 }
 
 void menu_init (NmenuPlugin *m)
@@ -1413,7 +1426,7 @@ void menu_init (NmenuPlugin *m)
 
     /* Set up variables */
     m->applist = gtk_list_store_new (6, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
-    g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);    //!!!!! Why is this getting called repeatedly??????
+    g_signal_connect (m->applist, "row-deleted", G_CALLBACK (handle_drag_and_drop_done), m);
     m->swin = NULL;
 
     /* Load the sort list */

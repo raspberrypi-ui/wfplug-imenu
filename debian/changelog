@@ -1,3 +1,9 @@
+wfplug-imenu (0.5) trixie; urgency=medium
+
+  * Remove WfOptions
+
+ -- Simon Long <simon@raspberrypi.com>  Tue, 04 Aug 2026 13:31:03 +0100
+
 wfplug-imenu (0.4) trixie; urgency=medium
 
   * New XML

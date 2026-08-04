@@ -37,27 +37,14 @@ extern "C" {
     const char *package_name (void) { return GETTEXT_PACKAGE; };
 }
 
-void WidgetNmenu::read_settings (void)
-{
-    conf_table[0].value = (void *) &m->padding;
-    conf_table[1].value = (void *) &m->tooltips;
-    conf_table[2].value = (void *) &m->alphasort;
-    conf_table[3].value = (void *) &m->hierarchic;
-    conf_table[4].value = (void *) &m->comp_icons;
-    conf_table[5].value = (void *) &m->overlay_col;
-    conf_table[6].value = (void *) &m->overlay_text_col;
-
-    load_configuration_data (PLUGIN_NAME, conf_table);
-}
-
 void WidgetNmenu::handle_config_reload (void)
 {
-    load_configuration_data (PLUGIN_NAME, conf_table);
-
-    menu_set_padding (m);
-    if (m->alphasort) clear_sortorder (m);
-    gtk_widget_set_tooltip_text (m->img, m->tooltips ? _("Click here to open applications menu") : NULL);
-    handle_reload_menu (NULL, m);
+    if (load_configuration_data (PLUGIN_NAME, conf_table))
+    {
+        if (m->alphasort) clear_sortorder (m);
+        handle_reload_menu (NULL, m);
+        menu_update_display (m);
+    }
 }
 
 void WidgetNmenu::command (const char *cmd)
@@ -85,7 +72,8 @@ void WidgetNmenu::init (Gtk::HBox *container)
     icon_timer = Glib::signal_idle().connect (sigc::mem_fun (*this, &WidgetNmenu::set_icon));
 
     /* Initialise the plugin */
-    read_settings ();
+    menu_set_values (m);
+    load_configuration_data (PLUGIN_NAME, conf_table);
     menu_init (m);
 }
 
