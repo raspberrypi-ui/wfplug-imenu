@@ -37,7 +37,18 @@ extern "C" {
     const char *package_name (void) { return GETTEXT_PACKAGE; };
 }
 
-void WidgetNmenu::handle_config_reload (void)
+void WidgetNmenu::widget_command (const char *cmd)
+{
+    menu_control_msg (m, cmd);
+}
+
+void WidgetNmenu::widget_set_icon (void)
+{
+    handle_reload_menu (NULL, m);
+    menu_update_display (m);
+}
+
+void WidgetNmenu::widget_config_reload (void)
 {
     if (load_configuration_data (PLUGIN_NAME, conf_table))
     {
@@ -47,19 +58,7 @@ void WidgetNmenu::handle_config_reload (void)
     }
 }
 
-void WidgetNmenu::command (const char *cmd)
-{
-    menu_control_msg (m, cmd);
-}
-
-bool WidgetNmenu::set_icon (void)
-{
-    handle_reload_menu (NULL, m);
-    menu_update_display (m);
-    return false;
-}
-
-void WidgetNmenu::init (Gtk::HBox *container)
+void WidgetNmenu::widget_init (Gtk::HBox *container)
 {
     /* Create the button */
     plugin = std::make_unique <Gtk::Button> ();
@@ -69,7 +68,6 @@ void WidgetNmenu::init (Gtk::HBox *container)
     /* Setup structure */
     m = g_new0 (NmenuPlugin, 1);
     m->plugin = (GtkWidget *)((*plugin).gobj());
-    icon_timer = Glib::signal_idle().connect (sigc::mem_fun (*this, &WidgetNmenu::set_icon));
 
     /* Initialise the plugin */
     menu_set_values (m);
@@ -79,7 +77,6 @@ void WidgetNmenu::init (Gtk::HBox *container)
 
 WidgetNmenu::~WidgetNmenu()
 {
-    icon_timer.disconnect ();
     menu_destructor (m);
 }
 

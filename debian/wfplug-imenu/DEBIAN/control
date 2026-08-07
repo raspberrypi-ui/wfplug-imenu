@@ -1,0 +1,11 @@
+Package: wfplug-imenu
+Version: 0.6
+Architecture: arm64
+Maintainer: Simon Long <simon@raspberrypi.com>
+Installed-Size: 101
+Depends: libc6 (>= 2.38), libcairo2 (>= 1.2.4), libgcc-s1 (>= 3.0), libgdk-pixbuf-2.0-0 (>= 2.22.0), libglib2.0-0t64 (>= 2.36.0), libglibmm-2.4-1t64 (>= 2.66.8), libgtk-3-0t64 (>= 3.21.5), libgtkmm-3.0-1t64 (>= 3.24.10), libmenu-cache3 (>= 0.5.0), libpango-1.0-0 (>= 1.14.0), libstdc++6 (>= 12), dconf-gsettings-backend | gsettings-backend, wf-panel-pi (>= 1.23)
+Section: x11
+Priority: optional
+Homepage: http://raspberrypi.com/
+Description: Icon launcher plugin for wf-panel-pi
+ Plugin for wf-panel-pi to show icon view of launchable applications.

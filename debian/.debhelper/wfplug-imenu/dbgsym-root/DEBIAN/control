@@ -1,0 +1,12 @@
+Package: wfplug-imenu-dbgsym
+Source: wfplug-imenu
+Version: 0.6
+Auto-Built-Package: debug-symbols
+Architecture: arm64
+Maintainer: Simon Long <simon@raspberrypi.com>
+Installed-Size: 106
+Depends: wfplug-imenu (= 0.6)
+Section: debug
+Priority: optional
+Description: debug symbols for wfplug-imenu
+Build-Ids: 044217f6e9d304ef2d4edf13274f452c9ddea7f3

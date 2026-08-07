@@ -1,0 +1,7 @@
+0d087eea795c650a1472974fd11ba6e8  usr/lib/aarch64-linux-gnu/wf-panel-pi/libnmenu.so
+ab23b180c59333bd42a8932bdf1b2a89  usr/share/doc/wfplug-imenu/changelog.gz
+facbfb4f8cae2b198f266afa570b73e3  usr/share/doc/wfplug-imenu/copyright
+b505d6a324fd978002b37469ac1b0b7b  usr/share/glib-2.0/schemas/com.raspberrypi.wfplug-imenu.gschema.xml
+7d3399a33914c855938efa192953eb39  usr/share/locale/en_GB/LC_MESSAGES/wfplug_nmenu.mo
+eeb40fab9250f251c3aa3f46dcdd7096  usr/share/wf-panel-pi/images/new.png
+ab85f49eba0c65193e6994d515b35571  usr/share/wf-panel-pi/ui/gmenu.ui
