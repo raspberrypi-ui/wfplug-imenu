@@ -28,9 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <gtk/gtk.h>
 #include <glib/gstdio.h>
 #include <glib/gi18n.h>
-#include <menu-cache.h>
 
-#include "lxutils.h"
+#include "plugin.h"
 
 /*----------------------------------------------------------------------------*/
 /* Typedefs and macros                                                        */

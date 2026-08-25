@@ -28,9 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <locale.h>
 #include <glib/gi18n.h>
-#include <menu-cache.h>
 
-#include "lxutils.h"
+#include "plugin.h"
 #include "nmenu.h"
 #include "launcher.h"
 
@@ -812,7 +811,7 @@ static void create_cs_menu (NmenuPlugin *m, char *id, int x, int y)
 static void handle_menu_item_add_to_desktop (GtkWidget *mi, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
-    MenuCacheItem *item = menu_cache_find_item_by_id (m->menu_cache, gtk_widget_get_name (mi));
+    MenuCacheItem *item = menu_cache_find_item_by_id (mcache, gtk_widget_get_name (mi));
     char *path = g_build_filename (g_get_home_dir (), "Desktop", menu_cache_item_get_file_basename (item), NULL);
     FILE *fp = fopen (path, "wb");
     if (fp)
@@ -837,7 +836,7 @@ static void handle_menu_item_add_to_launcher (GtkWidget *mi, gpointer user_data)
 static void handle_menu_item_properties (GtkWidget *mi, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
-    MenuCacheItem *item = menu_cache_find_item_by_id (m->menu_cache, gtk_widget_get_name (mi));
+    MenuCacheItem *item = menu_cache_find_item_by_id (mcache, gtk_widget_get_name (mi));
     destroy_window (m);
     show_properties_dialog (item);
 }
@@ -864,7 +863,7 @@ static int read_menu_cache (NmenuPlugin *m)
     if (m->apps) g_list_free_full (m->apps, (GDestroyNotify) free_entry);
     m->apps = NULL;
 
-    while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
+    while (dir == NULL) dir = menu_cache_dup_root_dir (mcache);
     load_menu (m, dir);
     menu_cache_item_unref (MENU_CACHE_ITEM (dir));
 
@@ -984,7 +983,7 @@ static int read_menu_cache_hierarchic (NmenuPlugin *m)
     g_free (str);
     g_free (act);
 
-    while (dir == NULL) dir = menu_cache_dup_root_dir (m->menu_cache);
+    while (dir == NULL) dir = menu_cache_dup_root_dir (mcache);
     count = load_menu_hierarchic (m, dir, 0, NULL, NULL);
     menu_cache_item_unref (MENU_CACHE_ITEM (dir));
     g_signal_handlers_unblock_by_func (m->applist, G_CALLBACK (handle_drag_and_drop_done), m);
@@ -1432,11 +1431,7 @@ void menu_init (NmenuPlugin *m)
     /* Load the sort list */
     load_sortorder (m);
 
-    gboolean need_prefix = (g_getenv ("XDG_MENU_PREFIX") == NULL);
-    m->menu_cache = menu_cache_lookup (need_prefix ? "lxde-applications.menu" : "applications.menu");
-    if (m->menu_cache == NULL) g_warning ("Error loading applications menu");
-
-    m->reload_notify = menu_cache_add_reload_notify (m->menu_cache, handle_reload_menu, m);
+    m->reload_notify = menu_cache_add_reload_notify (mcache, handle_reload_menu, m);
 
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);
@@ -1451,11 +1446,8 @@ void menu_destructor (gpointer user_data)
     destroy_window (m);
 
     if (m->applist) gtk_list_store_clear (m->applist);
-    if (m->menu_cache)
-    {
-        menu_cache_remove_reload_notify (m->menu_cache, m->reload_notify);
-        // unref'ing the menu cache causes a segfault because its io thread isn't being closed...
-    }
+
+    if (m->reload_notify) menu_cache_remove_reload_notify (mcache, m->reload_notify);
 
     if (m->gesture) g_object_unref (m->gesture);
     if (m->migesture) g_object_unref (m->migesture);

@@ -52,7 +52,6 @@ typedef struct
     int width;
     int height;
 
-    MenuCache *menu_cache;
     gpointer reload_notify;
 
     GList *apps;

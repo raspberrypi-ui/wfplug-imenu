@@ -10,7 +10,6 @@ Homepage: http://raspberrypi.com/
 
 Package: wfplug-imenu
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
- wf-panel-pi (>=1.23)
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Icon launcher plugin for wf-panel-pi
  Plugin for wf-panel-pi to show icon view of launchable applications.
