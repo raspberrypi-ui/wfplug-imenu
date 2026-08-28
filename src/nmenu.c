@@ -30,8 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <glib/gi18n.h>
 
 #include "plugin.h"
+
 #include "nmenu.h"
-#include "launcher.h"
 
 extern void gtk_launch (const char *app_name);
 extern void show_properties_dialog (MenuCacheItem *item);
