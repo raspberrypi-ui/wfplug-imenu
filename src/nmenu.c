@@ -116,7 +116,7 @@ static char *ellipsize_lines (NmenuPlugin *m, const char *text);
 static void load_sortorder (NmenuPlugin* m);
 static void save_sortorder (NmenuPlugin* m);
 static void set_alphasort (gboolean state);
-static void handle_icon_cache_update (GFileMonitor *, GFile *, GFile *, GFileMonitorEvent *, gpointer user_data);
+static void handle_icon_cache_update (GFileMonitor *, GFile *, GFile *, GFileMonitorEvent, gpointer user_data);
 static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 
 /*----------------------------------------------------------------------------*/
@@ -1343,10 +1343,10 @@ static void set_alphasort (gboolean state)
 
 /* Icon cache update handler */
 
-static void handle_icon_cache_update (GFileMonitor *, GFile *, GFile *, GFileMonitorEvent *, gpointer user_data)
+static void handle_icon_cache_update (GFileMonitor *, GFile *, GFile *, GFileMonitorEvent, gpointer user_data)
 {
     NmenuPlugin *m = (NmenuPlugin *) user_data;
-
+    gtk_icon_theme_rescan_if_needed (gtk_icon_theme_get_default ());
     handle_reload_menu (NULL, m);
 }
 
