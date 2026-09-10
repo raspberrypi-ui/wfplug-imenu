@@ -116,6 +116,7 @@ static char *ellipsize_lines (NmenuPlugin *m, const char *text);
 static void load_sortorder (NmenuPlugin* m);
 static void save_sortorder (NmenuPlugin* m);
 static void set_alphasort (gboolean state);
+static void handle_icon_cache_update (GFileMonitor *, GFile *, GFile *, GFileMonitorEvent *, gpointer user_data);
 static void menu_button_clicked (GtkWidget *, NmenuPlugin *m);
 
 /*----------------------------------------------------------------------------*/
@@ -495,6 +496,9 @@ static void window_destroyed (GtkWidget *, gpointer data)
     g_signal_handlers_disconnect_matched (m->srch, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
     g_signal_handlers_disconnect_matched (m->stv, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
     m->swin = NULL;
+
+    // crude, but effective...
+    handle_reload_menu (NULL, m);
 }
 
 static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
@@ -1337,6 +1341,15 @@ static void set_alphasort (gboolean state)
     g_free (filename);
 }
 
+/* Icon cache update handler */
+
+static void handle_icon_cache_update (GFileMonitor *, GFile *, GFile *, GFileMonitorEvent *, gpointer user_data)
+{
+    NmenuPlugin *m = (NmenuPlugin *) user_data;
+
+    handle_reload_menu (NULL, m);
+}
+
 /*----------------------------------------------------------------------------*/
 /* wf-panel plugin functions                                                  */
 /*----------------------------------------------------------------------------*/
@@ -1431,7 +1444,11 @@ void menu_init (NmenuPlugin *m)
     /* Load the sort list */
     load_sortorder (m);
 
+    /* Monitor the menu and icon caches */
     m->reload_notify = menu_cache_add_reload_notify (mcache, handle_reload_menu, m);
+    m->iconcache = g_file_new_for_path ("/usr/share/icons/hicolor/icon-theme.cache");
+    m->filemon = g_file_monitor_file (m->iconcache, G_FILE_MONITOR_NONE, NULL, NULL);
+    g_signal_connect (m->filemon, "changed", G_CALLBACK (handle_icon_cache_update), m);
 
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);
@@ -1448,11 +1465,14 @@ void menu_destructor (gpointer user_data)
     if (m->applist) gtk_list_store_clear (m->applist);
 
     if (m->reload_notify) menu_cache_remove_reload_notify (mcache, m->reload_notify);
+    if (m->filemon) g_object_unref (m->filemon);
+    if (m->iconcache) g_object_unref (m->iconcache);
 
     if (m->gesture) g_object_unref (m->gesture);
     if (m->migesture) g_object_unref (m->migesture);
 
-    g_object_unref (m->background);
+    if (m->background) g_object_unref (m->background);
+
     g_free (m);
 }
 

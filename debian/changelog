@@ -1,3 +1,9 @@
+wfplug-imenu (0.9) trixie; urgency=medium
+
+  * Monitor icon cache for updates
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 10 Sep 2026 20:08:26 +0100
+
 wfplug-imenu (0.8) trixie; urgency=medium
 
   * Version bump for build

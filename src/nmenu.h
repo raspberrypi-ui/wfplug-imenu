@@ -53,6 +53,8 @@ typedef struct
     int height;
 
     gpointer reload_notify;
+    GFile *iconcache;
+    GFileMonitor *filemon;
 
     GList *apps;
     GList *sortorder;
