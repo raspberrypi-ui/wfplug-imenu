@@ -1,3 +1,9 @@
+wfplug-imenu (0.10) trixie; urgency=medium
+
+  * Fix crash when closing search window
+
+ -- Simon Long <simon@raspberrypi.com>  Wed, 16 Sep 2026 13:21:27 +0100
+
 wfplug-imenu (0.9) trixie; urgency=medium
 
   * Monitor icon cache for updates

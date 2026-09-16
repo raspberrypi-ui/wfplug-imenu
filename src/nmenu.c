@@ -492,6 +492,11 @@ static void destroy_window (NmenuPlugin *m)
 static void window_destroyed (GtkWidget *, gpointer data)
 {
     NmenuPlugin *m = (NmenuPlugin *) data;
+
+    // detach the model before it is cleared below - otherwise a still-live icon view
+    // left showing the filtered search model causes a crash in gtk_list_store_clear
+    gtk_icon_view_set_model (GTK_ICON_VIEW (m->stv), NULL);
+
     g_signal_handlers_disconnect_matched (m->swin, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
     g_signal_handlers_disconnect_matched (m->srch, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
     g_signal_handlers_disconnect_matched (m->stv, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
