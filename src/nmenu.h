@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*----------------------------------------------------------------------------*/
 
 #define PLUGIN_TITLE N_("Icon Menu")
+#define PLUGIN_DESC N_("Icon-based application launcher")
 
 typedef struct 
 {
