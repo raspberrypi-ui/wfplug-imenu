@@ -1455,6 +1455,9 @@ void menu_init (NmenuPlugin *m)
     m->filemon = g_file_monitor_file (m->iconcache, G_FILE_MONITOR_NONE, NULL, NULL);
     g_signal_connect (m->filemon, "changed", G_CALLBACK (handle_icon_cache_update), m);
 
+    /* Force an initial load of the menu just in case */
+    handle_reload_menu (NULL, m);
+
     /* Show the widget and return */
     gtk_widget_show_all (m->plugin);
 
