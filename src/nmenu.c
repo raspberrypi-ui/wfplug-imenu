@@ -501,9 +501,6 @@ static void window_destroyed (GtkWidget *, gpointer data)
     g_signal_handlers_disconnect_matched (m->srch, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
     g_signal_handlers_disconnect_matched (m->stv, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, m);
     m->swin = NULL;
-
-    // crude, but effective...
-    handle_reload_menu (NULL, m);
 }
 
 static gboolean filter_apps (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
