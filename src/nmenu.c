@@ -112,6 +112,7 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
 static gboolean filter_apps_hierarchic (GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
 static void change_dir (NmenuPlugin *m, char *str);
 static void set_title (NmenuPlugin *m);
+static gboolean settings_has_key (GSettings *gs, const char *key);
 static char *ellipsize_lines (NmenuPlugin *m, const char *text);
 static void load_sortorder (NmenuPlugin* m);
 static void save_sortorder (NmenuPlugin* m);
@@ -1044,22 +1045,26 @@ static int load_menu_hierarchic (NmenuPlugin* m, MenuCacheDir* dir, int menu, ch
 
                                         gs = g_settings_new (SCHEMA);
                                         sid = g_ascii_strdown (menu_cache_item_get_id (item), -1);
-                                        tot = g_settings_get_int (gs, sid);
-                                        if (init)
+                                        if (settings_has_key (gs, sid))
                                         {
-                                            tot = res;
-                                            g_settings_set_int (gs, sid, tot);
+                                            tot = g_settings_get_int (gs, sid);
+                                            if (init)
+                                            {
+                                                tot = res;
+                                                g_settings_set_int (gs, sid, tot);
+                                            }
+                                            else if (res > abs (tot))
+                                            {
+                                                tot = -res;
+                                                g_settings_set_int (gs, sid, tot);
+                                            }
+                                            else if (res < abs (tot))
+                                            {
+                                                tot = res * (tot / abs (tot));
+                                                g_settings_set_int (gs, sid, tot);
+                                            }
                                         }
-                                        else if (res > abs (tot))
-                                        {
-                                            tot = -res;
-                                            g_settings_set_int (gs, sid, tot);
-                                        }
-                                        else if (res < abs (tot))
-                                        {
-                                            tot = res * (tot / abs (tot));
-                                            g_settings_set_int (gs, sid, tot);
-                                        }
+                                        else tot = 0;
                                         if (tot < 0)
                                         {
                                             new = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/new.png", NULL);
@@ -1188,7 +1193,7 @@ static void set_title (NmenuPlugin *m)
 
                 gs = g_settings_new (SCHEMA);
                 sid = g_ascii_strdown (dir, -1);
-                tot = g_settings_get_int (gs, sid);
+                tot = settings_has_key (gs, sid) ? g_settings_get_int (gs, sid) : 0;
                 if (tot < 0)
                 {
                     g_settings_set_int (gs, sid, -tot);
@@ -1208,6 +1213,17 @@ static void set_title (NmenuPlugin *m)
         g_free (id);
         found = gtk_tree_model_iter_next (GTK_TREE_MODEL (m->applist), &iter);
     }
+}
+
+static gboolean settings_has_key (GSettings *gs, const char *key)
+{
+    GSettingsSchema *schema;
+    gboolean res;
+
+    g_object_get (gs, "settings-schema", &schema, NULL);
+    res = g_settings_schema_has_key (schema, key);
+    g_settings_schema_unref (schema);
+    return res;
 }
 
 static char *ellipsize_lines (NmenuPlugin *m, const char *text)
