@@ -1,3 +1,9 @@
+wfplug-imenu (0.14) trixie; urgency=medium
+
+  * Add Other category to schema
+
+ -- Simon Long <simon@raspberrypi.com>  Fri, 25 Sep 2026 04:07:00 +0100
+
 wfplug-imenu (0.13) trixie; urgency=medium
 
   * Don't force menu reload on close - cache handler seems to work reliably

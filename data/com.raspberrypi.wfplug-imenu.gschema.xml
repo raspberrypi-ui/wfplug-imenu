@@ -78,6 +78,13 @@
         Total number of entries in the Utility category in menu cache
       </description>
     </key>
+    <key name="other" type="i">
+      <default>0</default>
+      <summary>Other total</summary>
+      <description>
+        Total number of entries in the Other category in menu cache
+      </description>
+    </key>
     <key name="help" type="i">
       <default>0</default>
       <summary>Help total</summary>
