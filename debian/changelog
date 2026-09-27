@@ -1,3 +1,9 @@
+wfplug-imenu (0.15) trixie; urgency=medium
+
+  * Prevent crashing on hierarchical view when menu categories not in schema have been added
+
+ -- Simon Long <simon@raspberrypi.com>  Sun, 27 Sep 2026 14:10:03 +0100
+
 wfplug-imenu (0.14) trixie; urgency=medium
 
   * Add Other category to schema
